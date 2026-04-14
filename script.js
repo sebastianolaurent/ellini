@@ -4,6 +4,9 @@ const mapContainer = document.getElementById('wedding-map');
 const openMapsButton = document.getElementById('open-maps');
 const MAP_COORDS = { lat: 44.7692730, lon: 9.3862814 };
 const MAP_LABEL = 'Agriturismo Il Torrione del Trebbia, Bobbio (PC)';
+const darkSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+let mapInstance = null;
+let usesAppleMap = false;
 
 function showMapMessage(message) {
   if (!mapContainer) return;
@@ -142,15 +145,24 @@ function initMapLibreMap() {
     return;
   }
 
+  if (mapInstance) {
+    mapInstance.remove();
+    mapInstance = null;
+  }
+
   mapContainer.innerHTML = '';
+  const styleUrl = darkSchemeQuery.matches
+    ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+    : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
   const map = new maplibregl.Map({
     container: 'wedding-map',
-    style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+    style: styleUrl,
     center: [MAP_COORDS.lon, MAP_COORDS.lat],
     zoom: 14.8,
     attributionControl: true
   });
+  mapInstance = map;
 
   map.scrollZoom.disable();
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
@@ -219,6 +231,19 @@ window.addEventListener('DOMContentLoaded', () => {
   initIbanCopy();
   hydrateMapLinks();
   if (!initAppleMap()) {
+    usesAppleMap = false;
     initMapLibreMap();
+  } else {
+    usesAppleMap = true;
   }
 });
+
+if (typeof darkSchemeQuery.addEventListener === 'function') {
+  darkSchemeQuery.addEventListener('change', () => {
+    if (!usesAppleMap) initMapLibreMap();
+  });
+} else if (typeof darkSchemeQuery.addListener === 'function') {
+  darkSchemeQuery.addListener(() => {
+    if (!usesAppleMap) initMapLibreMap();
+  });
+}

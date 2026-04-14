@@ -10,6 +10,10 @@
   --shadow: 0 14px 35px rgba(35, 27, 46, 0.14);
 }
 
+:root {
+  color-scheme: light dark;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -435,10 +439,78 @@ p {
   padding: 2.2rem 0 2.7rem;
   text-align: center;
   color: var(--muted);
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.15;
 }
 
 .footer p + p {
   margin-top: 0.35rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1b1724;
+    --bg-soft: #231d2f;
+    --card: #2a2238;
+    --text: #f3ecff;
+    --muted: #c2b4db;
+    --accent: #c6a6f4;
+    --accent-dark: #a97ee5;
+    --border: #4f4169;
+    --shadow: 0 16px 36px rgba(6, 3, 12, 0.5);
+  }
+
+  body {
+    background: radial-gradient(circle at 12% 20%, #2a2238 0%, var(--bg) 45%, #110e18 100%);
+  }
+
+  .btn-secondary {
+    background: rgba(28, 24, 38, 0.9);
+    color: #ecdfff;
+  }
+
+  .btn-secondary:hover,
+  .btn-secondary:focus-visible {
+    background: rgba(40, 34, 54, 0.95);
+  }
+
+  .hero-overlay {
+    background:
+      linear-gradient(to top, rgba(8, 6, 13, 0.72), rgba(8, 6, 13, 0.42)),
+      radial-gradient(circle at 75% 20%, rgba(156, 120, 214, 0.24), transparent 40%);
+  }
+
+  .hero-content .eyebrow {
+    background: rgba(14, 10, 22, 0.68);
+    border-color: rgba(206, 181, 241, 0.58);
+  }
+
+  .map-preview {
+    background: rgba(31, 26, 42, 0.9);
+  }
+
+  .gift-box {
+    background: linear-gradient(170deg, rgba(45, 36, 62, 0.92), rgba(30, 24, 42, 0.95));
+  }
+
+  .iban-box {
+    background: rgba(26, 21, 37, 0.8);
+  }
+
+  .iban-sep,
+  .iban-hint {
+    color: rgba(216, 198, 245, 0.5);
+  }
+
+  #wedding-map .maplibregl-ctrl-group {
+    background: rgba(24, 20, 33, 0.9);
+    border: 1px solid rgba(110, 92, 146, 0.7);
+  }
+
+  #wedding-map .maplibregl-ctrl button .maplibregl-ctrl-icon {
+    filter: invert(1) brightness(1.35);
+  }
 }
 
 @media (max-width: 980px) {
