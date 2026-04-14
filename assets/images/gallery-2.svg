@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1125" viewBox="0 0 900 1125" fill="none">
+  <defs><linearGradient id="g" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e5ccb0"/><stop offset="100%" stop-color="#9c7650"/></linearGradient></defs>
+  <rect width="900" height="1125" fill="url(#g)"/>
+  <rect x="130" y="220" width="620" height="680" rx="48" fill="#fef9f0" fill-opacity="0.25"/>
+  <text x="86" y="960" fill="#3b2d20" font-family="Verdana, sans-serif" font-size="52">Foto 2</text>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1125" viewBox="0 0 900 1125" fill="none">
+  <defs><linearGradient id="g" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#d4b28d"/><stop offset="100%" stop-color="#f0ddc3"/></linearGradient></defs>
+  <rect width="900" height="1125" fill="url(#g)"/>
+  <path d="M100 780C230 620 360 560 500 600C620 635 690 700 790 820V1125H100V780Z" fill="#866447" fill-opacity="0.38"/>
+  <text x="86" y="960" fill="#3b2d20" font-family="Verdana, sans-serif" font-size="52">Foto 3</text>
+</svg>
