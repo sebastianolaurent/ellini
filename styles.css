@@ -1,13 +1,13 @@
 :root {
-  --bg: #f6f2ea;
-  --bg-soft: #efe7da;
-  --card: #fcfaf6;
-  --text: #241f1c;
-  --muted: #65594f;
-  --accent: #8b6f4e;
-  --accent-dark: #684f34;
-  --border: #d8cab7;
-  --shadow: 0 14px 35px rgba(36, 31, 28, 0.12);
+  --bg: #f2ecfb;
+  --bg-soft: #e8ddf6;
+  --card: #fbf8ff;
+  --text: #231b2e;
+  --muted: #5f5272;
+  --accent: #9a79c6;
+  --accent-dark: #7552a4;
+  --border: #d8c9ed;
+  --shadow: 0 14px 35px rgba(35, 27, 46, 0.14);
 }
 
 * {
@@ -22,7 +22,7 @@ body {
   margin: 0;
   font-family: "Manrope", sans-serif;
   color: var(--text);
-  background: radial-gradient(circle at 12% 20%, #fffdf9 0%, var(--bg) 45%, #ede4d5 100%);
+  background: radial-gradient(circle at 12% 20%, #fdfaff 0%, var(--bg) 45%, #e0d3f3 100%);
   line-height: 1.5;
 }
 
@@ -98,7 +98,7 @@ p {
 .btn-primary:hover,
 .btn-primary:focus-visible {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(104, 79, 52, 0.24);
+  box-shadow: 0 10px 24px rgba(117, 82, 164, 0.3);
 }
 
 .btn-secondary {
@@ -132,8 +132,8 @@ p {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to top, rgba(18, 12, 7, 0.6), rgba(18, 12, 7, 0.35)),
-    radial-gradient(circle at 75% 20%, rgba(255, 227, 191, 0.15), transparent 40%);
+    linear-gradient(to top, rgba(24, 16, 34, 0.62), rgba(24, 16, 34, 0.36)),
+    radial-gradient(circle at 75% 20%, rgba(230, 210, 255, 0.22), transparent 40%);
 }
 
 .hero-content {
