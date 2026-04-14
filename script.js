@@ -40,6 +40,7 @@ function initLeafletMap() {
     return;
   }
 
+  mapContainer.innerHTML = '';
   const coords = [MAP_COORDS.lat, MAP_COORDS.lon];
   const map = L.map('wedding-map', { scrollWheelZoom: false }).setView(coords, 15);
 
