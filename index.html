@@ -14,6 +14,12 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -93,22 +99,26 @@
         <div class="container map-layout">
           <div class="map-copy">
             <p class="eyebrow">Come Arrivare</p>
-            <h2>Indicazioni su Apple Maps</h2>
+            <h2>Indicazioni stradali</h2>
             <p>
               Per raggiungere facilmente la location, usate il pulsante qui sotto.
-              Potete aprire direttamente il percorso in Apple Maps da iPhone o Mac.
+              Il sito aprirà automaticamente l'app o il servizio mappe più adatto al dispositivo.
             </p>
             <div class="map-actions">
               <a
                 class="btn btn-primary"
-                href="https://maps.apple.com/?q=Villa%20Aurelia%20Roma"
+                href="https://www.google.com/maps/search/?api=1&query=41.8885649,12.4615850"
+                id="open-maps"
+                data-lat="41.8885649"
+                data-lon="12.4615850"
+                data-label="Villa Aurelia Roma"
                 target="_blank"
                 rel="noopener noreferrer"
-                >Apri in Apple Maps</a
+                >Apri su Mappe</a
               >
               <a
                 class="btn btn-secondary"
-                href="https://maps.apple.com/?q=Parcheggio%20Villa%20Aurelia%20Roma"
+                href="https://www.openstreetmap.org/?mlat=41.8885649&mlon=12.4615850#map=16/41.8885649/12.4615850"
                 target="_blank"
                 rel="noopener noreferrer"
                 >Parcheggio</a
@@ -175,8 +185,7 @@
             <article class="check-card">
               <h3>Mappa</h3>
               <ul>
-                <li>Link Apple Maps ufficiale della location</li>
-                <li>Coordinate precise (se disponibili)</li>
+                <li>Coordinate precise della location</li>
                 <li>Punto parcheggio o meeting point</li>
               </ul>
             </article>
@@ -209,12 +218,12 @@
     </footer>
 
     <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script src="https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js" crossorigin></script>
     <script
-      src="https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js"
-      crossorigin
-      async
-      data-callback="initWeddingMap"
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
     ></script>
+    <script src="script.js"></script>
   </body>
 </html>
