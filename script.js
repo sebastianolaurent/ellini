@@ -2,8 +2,8 @@ const ibanText = document.getElementById('iban-text');
 const feedback = document.getElementById('copy-feedback');
 const mapContainer = document.getElementById('wedding-map');
 const openMapsButton = document.getElementById('open-maps');
-const MAP_COORDS = { lat: 41.8885649, lon: 12.461585 };
-const MAP_LABEL = 'Villa Aurelia, Largo di Porta San Pancrazio, Roma';
+const MAP_COORDS = { lat: 44.7692730, lon: 9.3862814 };
+const MAP_LABEL = 'Agriturismo Il Torrione del Trebbia, Bobbio (PC)';
 
 function showMapMessage(message) {
   if (!mapContainer) return;
