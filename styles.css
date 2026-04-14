@@ -678,9 +678,11 @@ body.author-modal-open {
 
 .iban {
   font-family: "Cormorant Garamond", serif;
-  font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+  font-size: clamp(1.2rem, 2.4vw, 1.7rem);
   font-weight: 600;
-  word-break: break-word;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
   color: #b88ef2;
 }
 
@@ -691,6 +693,7 @@ body.author-modal-open {
 .iban-sep {
   color: rgba(95, 82, 114, 0.32);
   font-size: 0.72em;
+  margin: 0 0.08em;
 }
 
 .iban-hint {

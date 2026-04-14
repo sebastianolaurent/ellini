@@ -144,7 +144,7 @@ function formatIbanForDisplay(iban) {
   const parts = getIbanParts(iban);
   return parts
     .map((part, index) =>
-      index === 0 ? part : `<span class="iban-sep" aria-hidden="true"> · </span>${part}`
+      index === 0 ? part : `<span class="iban-sep" aria-hidden="true">·</span>${part}`
     )
     .join('');
 }
