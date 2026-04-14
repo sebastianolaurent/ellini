@@ -60,8 +60,26 @@
               <p class="label">Inizio cerimonia</p>
               <p class="value">16:00</p>
               <p class="label">Luogo</p>
-              <p class="value">Basilica di San Marco</p>
-              <p class="address">Piazza Venezia, 48, 00186 Roma RM</p>
+              <p class="value">
+                <a
+                  class="place-link js-map-link"
+                  href="https://maps.apple.com/?q=Basilica%20di%20San%20Marco%20Piazza%20Venezia%2048%20Roma"
+                  data-label="Basilica di San Marco Piazza Venezia 48 Roma"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Basilica di San Marco</a
+                >
+              </p>
+              <p class="address">
+                <a
+                  class="place-link js-map-link"
+                  href="https://maps.apple.com/?q=Basilica%20di%20San%20Marco%20Piazza%20Venezia%2048%20Roma"
+                  data-label="Basilica di San Marco Piazza Venezia 48 Roma"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Piazza Venezia, 48, 00186 Roma RM</a
+                >
+              </p>
             </article>
 
             <article class="info-card">
@@ -73,8 +91,30 @@
               <p class="label">Saluti finali</p>
               <p class="value">00:30</p>
               <p class="label">Luogo</p>
-              <p class="value">Villa Aurelia</p>
-              <p class="address">Largo di Porta San Pancrazio, 1, 00165 Roma RM</p>
+              <p class="value">
+                <a
+                  class="place-link js-map-link"
+                  href="https://maps.apple.com/?ll=41.8885649,12.4615850&q=Villa%20Aurelia%20Roma"
+                  data-lat="41.8885649"
+                  data-lon="12.4615850"
+                  data-label="Villa Aurelia Roma"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Villa Aurelia</a
+                >
+              </p>
+              <p class="address">
+                <a
+                  class="place-link js-map-link"
+                  href="https://maps.apple.com/?ll=41.8885649,12.4615850&q=Villa%20Aurelia%20Roma"
+                  data-lat="41.8885649"
+                  data-lon="12.4615850"
+                  data-label="Villa Aurelia Roma"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Largo di Porta San Pancrazio, 1, 00165 Roma RM</a
+                >
+              </p>
             </article>
 
             <article class="info-card program-practical">
@@ -119,7 +159,7 @@
             <div class="map-actions">
               <a
                 class="btn btn-primary"
-                href="https://www.google.com/maps/search/?api=1&query=41.8885649,12.4615850"
+                href="https://maps.apple.com/?ll=41.8885649,12.4615850&q=Villa%20Aurelia%20Roma"
                 id="open-maps"
                 data-lat="41.8885649"
                 data-lon="12.4615850"
@@ -154,8 +194,16 @@
           </p>
           <div class="iban-box">
             <p class="label">IBAN</p>
-            <p class="iban" id="iban-text">IT50K0306909504100000013409</p>
-            <button class="btn btn-primary" id="copy-iban" type="button">Copia IBAN</button>
+            <p class="iban-hint">Clicca per copiare</p>
+            <p
+              class="iban iban-copy"
+              id="iban-text"
+              role="button"
+              tabindex="0"
+              aria-label="Copia IBAN"
+            >
+              IT50K0306909504100000013409
+            </p>
             <p class="copy-feedback" id="copy-feedback" role="status" aria-live="polite"></p>
           </div>
           <p class="causal">Causale facoltativa: “Regalo matrimonio Eleonora e Luca”</p>

@@ -1,4 +1,3 @@
-const copyButton = document.getElementById('copy-iban');
 const ibanText = document.getElementById('iban-text');
 const feedback = document.getElementById('copy-feedback');
 const mapContainer = document.getElementById('wedding-map');
@@ -24,14 +23,117 @@ function parseJwtPayload(token) {
 function getPreferredMapsUrl(lat, lon, label) {
   const encodedLabel = encodeURIComponent(label);
   const ua = navigator.userAgent || '';
-  const isIOS = /iPad|iPhone|iPod/.test(ua);
-  const isMac = /Macintosh|Mac OS X/.test(ua);
+  const isAndroid = /Android/i.test(ua);
 
-  if (isIOS || isMac) {
+  if (isAndroid) {
+    if (lat && lon) {
+      return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+    }
+    return `https://www.google.com/maps/search/?api=1&query=${encodedLabel}`;
+  }
+
+  if (lat && lon) {
     return `https://maps.apple.com/?ll=${lat},${lon}&q=${encodedLabel}`;
   }
 
-  return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+  return `https://maps.apple.com/?q=${encodedLabel}`;
+}
+
+function hydrateMapLinks() {
+  const mapLinks = document.querySelectorAll('.js-map-link');
+  mapLinks.forEach((link) => {
+    const { lat, lon, label } = link.dataset;
+    const targetUrl = getPreferredMapsUrl(lat, lon, label || 'Destinazione');
+    link.setAttribute('href', targetUrl);
+  });
+
+  if (openMapsButton) {
+    const { lat, lon, label } = openMapsButton.dataset;
+    const targetUrl = getPreferredMapsUrl(lat, lon, label || 'Destinazione');
+    openMapsButton.setAttribute('href', targetUrl);
+  }
+}
+
+function normalizeIban(text) {
+  return (text || '').replace(/\s+/g, '').trim();
+}
+
+function getIbanParts(iban) {
+  if (!iban) return [];
+  if (/^IT/i.test(iban) && iban.length >= 27) {
+    const countryCode = iban.slice(0, 2);
+    const checkDigits = iban.slice(2, 4);
+    const cin = iban.slice(4, 5);
+    const abi = iban.slice(5, 10);
+    const cab = iban.slice(10, 15);
+    const account = iban.slice(15, 27);
+    return [countryCode, checkDigits, cin, abi, cab, account];
+  }
+
+  const countryCode = iban.slice(0, 2);
+  const chunks = (iban.slice(2).match(/.{1,4}/g) || []);
+  return [countryCode, ...chunks];
+}
+
+function formatIbanForDisplay(iban) {
+  const parts = getIbanParts(iban);
+  return parts
+    .map((part, index) =>
+      index === 0 ? part : `<span class="iban-sep" aria-hidden="true"> · </span>${part}`
+    )
+    .join('');
+}
+
+function initIbanDisplay() {
+  if (!ibanText) return;
+  const rawIban = normalizeIban(ibanText.textContent);
+  ibanText.dataset.ibanRaw = rawIban;
+  ibanText.innerHTML = formatIbanForDisplay(rawIban);
+}
+
+function getIbanValue() {
+  if (!ibanText) return '';
+  return ibanText.dataset.ibanRaw || normalizeIban(ibanText.textContent);
+}
+
+function setCopyFeedback(message) {
+  if (!feedback) return;
+  feedback.textContent = message;
+}
+
+async function copyToClipboard(text) {
+  if (!text) return false;
+  if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+    return false;
+  }
+
+  await navigator.clipboard.writeText(text);
+  return true;
+}
+
+function initIbanCopy() {
+  if (!ibanText || !feedback) return;
+
+  const copyIban = async () => {
+    try {
+      const ibanValue = getIbanValue();
+      const copied = await copyToClipboard(ibanValue);
+      if (!copied) {
+        throw new Error('Clipboard API non disponibile');
+      }
+      setCopyFeedback('IBAN copiato negli appunti.');
+    } catch (error) {
+      setCopyFeedback("Copia non riuscita. Seleziona e copia manualmente l'IBAN.");
+    }
+  };
+
+  ibanText.addEventListener('click', copyIban);
+  ibanText.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      copyIban();
+    }
+  });
 }
 
 function initMapLibreMap() {
@@ -103,17 +205,6 @@ function initAppleMap() {
   }
 }
 
-if (copyButton && ibanText && feedback) {
-  copyButton.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(ibanText.textContent.trim());
-      feedback.textContent = 'IBAN copiato negli appunti.';
-    } catch (error) {
-      feedback.textContent = "Copia non riuscita. Seleziona e copia manualmente l'IBAN.";
-    }
-  });
-}
-
 if (openMapsButton) {
   openMapsButton.addEventListener('click', (event) => {
     event.preventDefault();
@@ -124,6 +215,9 @@ if (openMapsButton) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  initIbanDisplay();
+  initIbanCopy();
+  hydrateMapLinks();
   if (!initAppleMap()) {
     initMapLibreMap();
   }
