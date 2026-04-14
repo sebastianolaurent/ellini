@@ -116,13 +116,9 @@
             </div>
           </div>
 
-          <div class="map-preview" aria-label="Anteprima area location">
-            <img
-              src="assets/images/map-preview-placeholder.svg"
-              alt="Anteprima della zona della location"
-              loading="lazy"
-            />
-            <p class="map-caption">Anteprima area location · da sostituire con snapshot reale</p>
+          <div class="map-preview" aria-label="Mappa interattiva della location">
+            <div id="wedding-map" role="region" aria-label="Mappa location ricevimento"></div>
+            <p class="map-caption">Mappa interattiva della zona di Villa Aurelia</p>
           </div>
         </div>
       </section>
@@ -212,6 +208,13 @@
       </div>
     </footer>
 
+    <script src="config.js"></script>
     <script src="script.js"></script>
+    <script
+      src="https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js"
+      crossorigin
+      async
+      data-callback="initWeddingMap"
+    ></script>
   </body>
 </html>

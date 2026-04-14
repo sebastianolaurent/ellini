@@ -237,6 +237,16 @@ p {
   box-shadow: var(--shadow);
 }
 
+#wedding-map {
+  width: 100%;
+  min-height: 360px;
+}
+
+.map-fallback {
+  padding: 1rem;
+  color: var(--muted);
+}
+
 .map-caption {
   padding: 0.8rem 1rem;
   color: var(--muted);
