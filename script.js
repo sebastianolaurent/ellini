@@ -103,11 +103,6 @@ function initAppleMap() {
   }
 }
 
-function hasMapRendering() {
-  if (!mapContainer) return false;
-  return Boolean(mapContainer.querySelector('canvas, img, .maplibregl-canvas'));
-}
-
 if (copyButton && ibanText && feedback) {
   copyButton.addEventListener('click', async () => {
     try {
@@ -131,13 +126,5 @@ if (openMapsButton) {
 window.addEventListener('DOMContentLoaded', () => {
   if (!initAppleMap()) {
     initMapLibreMap();
-    return;
   }
-
-  window.setTimeout(() => {
-    if (!hasMapRendering()) {
-      mapContainer.innerHTML = '';
-      initMapLibreMap();
-    }
-  }, 3000);
 });
