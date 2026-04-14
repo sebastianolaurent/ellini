@@ -324,7 +324,7 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .map-copy p {
@@ -335,6 +335,10 @@ p {
 .map-actions {
   display: flex;
   margin-top: 0;
+}
+
+.map-heading-row .map-actions {
+  flex-shrink: 0;
 }
 
 .map-preview {
@@ -944,6 +948,40 @@ body.author-modal-open {
 }
 
 @media (max-width: 640px) {
+  .btn {
+    padding: 0.62rem 1rem;
+    font-size: 0.86rem;
+  }
+
+  .map-heading-row {
+    gap: 0.55rem;
+    align-items: center;
+  }
+
+  .map-actions .btn {
+    padding: 0.42rem 0.72rem;
+    font-size: 0.74rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .guest-gallery-topline {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .guest-gallery-head {
+    min-width: 0;
+  }
+
+  .guest-gallery-topline .btn {
+    padding: 0.42rem 0.72rem;
+    font-size: 0.74rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
   .section {
     padding: 4rem 0;
   }
