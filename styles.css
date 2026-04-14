@@ -200,13 +200,15 @@ p {
 
 .hero-date {
   margin-top: 0.8rem;
-  font-size: 1.12rem;
+  font-size: 1.26rem;
   letter-spacing: 0.05em;
 }
 
 .hero-copy {
   width: min(660px, 90%);
   margin: 1.5rem auto 2rem;
+  font-size: 1.12rem;
+  line-height: 1.5;
   color: #f6f1ff;
 }
 
