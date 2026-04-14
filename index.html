@@ -26,7 +26,7 @@
       <div class="hero-overlay"></div>
       <img
         class="hero-photo"
-        src="assets/images/hero.webp"
+        src="assets/images/gallery-2.webp"
         alt="Eleonora e Luca"
         loading="eager"
       />
@@ -126,16 +126,6 @@
             </article>
           </div>
 
-          <div class="venue-gallery">
-            <p class="eyebrow">Location</p>
-            <h3>Foto del posto</h3>
-            <div class="gallery-grid">
-            <img src="assets/images/gallery-1.webp" alt="Wedding avenue - foto 1" loading="lazy" />
-            <img src="assets/images/gallery-2.webp" alt="Wedding avenue - foto 2" loading="lazy" />
-            <img src="assets/images/gallery-3.webp" alt="Wedding avenue - foto 3" loading="lazy" />
-            <img src="assets/images/gallery-4.webp" alt="Wedding avenue - foto 4" loading="lazy" />
-            </div>
-          </div>
         </div>
       </section>
 
@@ -143,35 +133,70 @@
         <div class="container map-layout">
           <div class="map-copy">
             <p class="eyebrow">Come Arrivare</p>
-            <h2>Indicazioni stradali</h2>
+            <div class="map-heading-row">
+              <h2>Indicazioni stradali</h2>
+              <div class="map-actions">
+                <a
+                  class="btn btn-primary"
+                  href="https://maps.apple.com/?q=Agriturismo%20Il%20Torrione%20del%20Trebbia%20Localita%20Morina%201%2029022%20Bobbio%20PC"
+                  id="open-maps"
+                  data-lat="44.7692730"
+                  data-lon="9.3862814"
+                  data-label="Agriturismo Il Torrione del Trebbia Bobbio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Apri su mappe</a
+                >
+              </div>
+            </div>
             <p>
               Per raggiungere facilmente la location, usate il pulsante qui sotto.
               Il sito aprirà automaticamente l'app o il servizio mappe più adatto al dispositivo.
             </p>
-            <div class="map-actions">
-              <a
-                class="btn btn-primary"
-                href="https://maps.apple.com/?q=Agriturismo%20Il%20Torrione%20del%20Trebbia%20Localita%20Morina%201%2029022%20Bobbio%20PC"
-                id="open-maps"
-                data-lat="44.7692730"
-                data-lon="9.3862814"
-                data-label="Agriturismo Il Torrione del Trebbia Bobbio"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Apri su Mappe</a
-              >
-              <a
-                class="btn btn-secondary"
-                href="https://www.openstreetmap.org/?mlat=44.7692730&mlon=9.3862814#map=14/44.7692730/9.3862814"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Parcheggio</a
-              >
-            </div>
           </div>
 
           <div class="map-preview" aria-label="Mappa interattiva della location">
             <div id="wedding-map" role="region" aria-label="Mappa location ricevimento"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section guest-gallery-section" id="foto-invitati">
+        <div class="container">
+          <div class="guest-gallery-topline">
+            <div class="section-head guest-gallery-head">
+              <p class="eyebrow">I vostri scatti</p>
+              <h2>Galleria degli invitati</h2>
+            </div>
+            <button class="btn btn-primary" id="guest-upload-trigger" type="button">
+              Aggiungi foto
+            </button>
+          </div>
+
+          <p class="guest-gallery-copy">
+            Rubiamo i ricordi migliori alla giornata: carica qui i tuoi scatti pazzi, teneri o
+            perfettamente fuori fuoco.
+          </p>
+
+          <input
+            id="guest-photos"
+            class="visually-hidden"
+            type="file"
+            accept="image/*"
+            multiple
+          />
+          <p class="upload-status" id="upload-status" role="status" aria-live="polite"></p>
+
+          <div class="guest-gallery-grid is-empty" id="guest-gallery" aria-live="polite">
+            <div class="guest-gallery-empty">
+              <strong>Album ancora vuoto</strong>
+              Nessun problema: appena arriva la prima foto, qui parte la festa.
+            </div>
+          </div>
+          <div class="guest-gallery-actions">
+            <a class="btn btn-secondary" id="view-all-photos" href="gallery.html" hidden>
+              Vedi tutte le foto
+            </a>
           </div>
         </div>
       </section>
@@ -202,36 +227,50 @@
         </div>
       </section>
 
-      <section class="section guest-gallery-section" id="foto-invitati">
-        <div class="container">
-          <div class="section-head">
-            <p class="eyebrow">I vostri scatti</p>
-            <h2>Galleria degli invitati</h2>
-          </div>
-
-          <p class="guest-gallery-copy">
-            Caricate qui le foto della giornata: compariranno automaticamente nella galleria.
-          </p>
-
-          <div class="guest-uploader">
-            <button class="btn btn-primary" id="guest-upload-trigger" type="button">
-              Aggiungi foto
-            </button>
-            <input
-              id="guest-photos"
-              class="visually-hidden"
-              type="file"
-              accept="image/*"
-              multiple
-            />
-            <p class="upload-status" id="upload-status" role="status" aria-live="polite"></p>
-          </div>
-
-          <div class="guest-gallery-grid" id="guest-gallery" aria-live="polite"></div>
-        </div>
-      </section>
-
     </main>
+
+    <div class="photo-lightbox" id="photo-lightbox" aria-hidden="true">
+      <button class="lightbox-close" id="lightbox-close" type="button" aria-label="Chiudi foto">
+        ×
+      </button>
+      <button class="lightbox-nav lightbox-prev" id="lightbox-prev" type="button" aria-label="Foto precedente">
+        ‹
+      </button>
+      <figure class="lightbox-frame">
+        <img id="lightbox-image" alt="Foto invitati a schermo intero" />
+      </figure>
+      <button class="lightbox-nav lightbox-next" id="lightbox-next" type="button" aria-label="Foto successiva">
+        ›
+      </button>
+    </div>
+
+    <div class="author-modal" id="author-modal" aria-hidden="true">
+      <div class="author-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="author-modal-title">
+        <button class="author-modal-close" id="author-modal-close" type="button" aria-label="Chiudi">
+          ×
+        </button>
+        <p class="eyebrow">Prima di caricare</p>
+        <h3 id="author-modal-title">Come ti chiami?</h3>
+        <p class="author-modal-copy">Usiamo il tuo nome come autore delle foto.</p>
+        <form class="author-modal-form" id="author-modal-form">
+          <label class="author-modal-label" for="author-name-input">Nome</label>
+          <input
+            class="author-modal-input"
+            id="author-name-input"
+            name="authorName"
+            type="text"
+            maxlength="40"
+            autocomplete="name"
+            required
+          />
+          <p class="author-modal-error" id="author-modal-error" role="status" aria-live="polite"></p>
+          <div class="author-modal-actions">
+            <button class="btn btn-secondary" id="author-modal-cancel" type="button">Annulla</button>
+            <button class="btn btn-primary" type="submit">Continua</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <footer class="footer">
       <div class="container">

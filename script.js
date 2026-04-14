@@ -2,20 +2,40 @@ const ibanText = document.getElementById('iban-text');
 const feedback = document.getElementById('copy-feedback');
 const mapContainer = document.getElementById('wedding-map');
 const openMapsButton = document.getElementById('open-maps');
+const heroPhoto = document.querySelector('.hero-photo');
 const guestUploadTrigger = document.getElementById('guest-upload-trigger');
 const guestUploadInput = document.getElementById('guest-photos');
 const guestUploadStatus = document.getElementById('upload-status');
 const guestGallery = document.getElementById('guest-gallery');
+const viewAllPhotosButton = document.getElementById('view-all-photos');
+const photoLightbox = document.getElementById('photo-lightbox');
+const lightboxImage = document.getElementById('lightbox-image');
+const lightboxCloseButton = document.getElementById('lightbox-close');
+const lightboxPrevButton = document.getElementById('lightbox-prev');
+const lightboxNextButton = document.getElementById('lightbox-next');
+const authorModal = document.getElementById('author-modal');
+const authorModalForm = document.getElementById('author-modal-form');
+const authorModalInput = document.getElementById('author-name-input');
+const authorModalError = document.getElementById('author-modal-error');
+const authorModalCancel = document.getElementById('author-modal-cancel');
+const authorModalClose = document.getElementById('author-modal-close');
 const MAP_COORDS = { lat: 44.7692730, lon: 9.3862814 };
 const MAP_LABEL = 'Agriturismo Il Torrione del Trebbia, Bobbio (PC)';
 const MAX_GUEST_PHOTO_BYTES = 1.5 * 1024 * 1024;
 const MAX_GUEST_PHOTO_DIMENSION = 2200;
 const MIN_GUEST_PHOTO_DIMENSION = 960;
+const HOME_GUEST_GALLERY_MAX_ITEMS = 6;
+const GUEST_AUTHOR_STORAGE_KEY = 'weddingGuestAuthorName';
+const DEFAULT_GUEST_AUTHOR = 'Invitato';
 const darkSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
 let mapInstance = null;
 let usesAppleMap = false;
 let supabaseClient = null;
 let guestUploadsEnabled = false;
+let guestGalleryItems = [];
+let currentLightboxIndex = 0;
+let pendingGuestAuthorName = '';
+let cachedGuestAuthorName = '';
 
 function showMapMessage(message) {
   if (!mapContainer) return;
@@ -25,6 +45,11 @@ function showMapMessage(message) {
 function setUploadStatus(message) {
   if (!guestUploadStatus) return;
   guestUploadStatus.textContent = message;
+}
+
+function setHeroPhotoForTheme() {
+  if (!heroPhoto) return;
+  heroPhoto.src = darkSchemeQuery.matches ? 'assets/images/hero.webp' : 'assets/images/gallery-2.webp';
 }
 
 function parseJwtPayload(token) {
@@ -197,16 +222,167 @@ function safeFileName(name) {
     .slice(0, 70) || 'foto';
 }
 
+function escapeHtml(text) {
+  return String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function normalizeGuestAuthorName(name) {
+  return String(name || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 40);
+}
+
+function getGuestAuthorSlug(name) {
+  const normalized = normalizeGuestAuthorName(name)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  const slug = normalized
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 32);
+  return slug || 'invitato';
+}
+
+function formatAuthorFromSlug(slug) {
+  if (!slug) return DEFAULT_GUEST_AUTHOR;
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function getAuthorFromPhotoName(fileName) {
+  const match = String(fileName || '').match(/--([a-z0-9-]{2,32})--/i);
+  if (!match) return DEFAULT_GUEST_AUTHOR;
+  return formatAuthorFromSlug(match[1]);
+}
+
 function getFileBaseName(name) {
   return safeFileName(name).replace(/\.[a-z0-9]+$/i, '') || 'foto';
 }
 
-function getGuestPhotoPath(file) {
+function getGuestPhotoPath(file, authorName) {
   const uniqueId =
     typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-  return `${Date.now()}-${uniqueId}-${getFileBaseName(file.name)}.jpg`;
+  const authorSlug = getGuestAuthorSlug(authorName);
+  return `${Date.now()}-${uniqueId}--${authorSlug}--${getFileBaseName(file.name)}.jpg`;
+}
+
+function getStoredGuestAuthorName() {
+  if (cachedGuestAuthorName) return cachedGuestAuthorName;
+  try {
+    cachedGuestAuthorName = normalizeGuestAuthorName(
+      localStorage.getItem(GUEST_AUTHOR_STORAGE_KEY) || ''
+    );
+    return cachedGuestAuthorName;
+  } catch (_) {
+    return cachedGuestAuthorName;
+  }
+}
+
+function storeGuestAuthorName(authorName) {
+  const normalized = normalizeGuestAuthorName(authorName);
+  cachedGuestAuthorName = normalized;
+  try {
+    localStorage.setItem(GUEST_AUTHOR_STORAGE_KEY, normalized);
+  } catch (_) {
+    // Ignore storage errors and continue with in-memory upload flow.
+  }
+}
+
+function askGuestAuthorName(initialValue = '') {
+  if (!authorModal || !authorModalForm || !authorModalInput || !authorModalError) {
+    const answer = window.prompt(
+      'Come ti chiami? Inseriamo il tuo nome come autore delle foto.',
+      initialValue
+    );
+    if (answer === null) return null;
+    return Promise.resolve(normalizeGuestAuthorName(answer));
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const closeModal = (value) => {
+      if (settled) return;
+      settled = true;
+      authorModal.classList.remove('is-open');
+      authorModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('author-modal-open');
+      authorModalForm.removeEventListener('submit', onSubmit);
+      authorModalCancel?.removeEventListener('click', onCancel);
+      authorModalClose?.removeEventListener('click', onCancel);
+      authorModal.removeEventListener('click', onBackdropClick);
+      document.removeEventListener('keydown', onEscape);
+      resolve(value);
+    };
+
+    const onSubmit = (event) => {
+      event.preventDefault();
+      const authorName = normalizeGuestAuthorName(authorModalInput.value);
+      if (!authorName) {
+        authorModalError.textContent = 'Inserisci il tuo nome per continuare.';
+        authorModalInput.focus();
+        return;
+      }
+      closeModal(authorName);
+    };
+
+    const onCancel = () => closeModal(null);
+
+    const onBackdropClick = (event) => {
+      if (event.target === authorModal) onCancel();
+    };
+
+    const onEscape = (event) => {
+      if (event.key === 'Escape') onCancel();
+    };
+
+    authorModalInput.value = initialValue;
+    authorModalError.textContent = '';
+    authorModal.classList.add('is-open');
+    authorModal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('author-modal-open');
+    authorModalForm.addEventListener('submit', onSubmit);
+    authorModalCancel?.addEventListener('click', onCancel);
+    authorModalClose?.addEventListener('click', onCancel);
+    authorModal.addEventListener('click', onBackdropClick);
+    document.addEventListener('keydown', onEscape);
+    requestAnimationFrame(() => {
+      authorModalInput.focus();
+      authorModalInput.select();
+    });
+  });
+}
+
+async function ensureGuestAuthorName() {
+  const storedAuthorName = getStoredGuestAuthorName();
+  if (storedAuthorName) return storedAuthorName;
+  const authorName = await askGuestAuthorName('');
+  if (!authorName) return authorName;
+  storeGuestAuthorName(authorName);
+  return authorName;
+}
+
+async function resolveGuestAuthorName() {
+  if (pendingGuestAuthorName) return pendingGuestAuthorName;
+  return ensureGuestAuthorName();
+}
+
+function isGuestAuthorNameMissing(authorName) {
+  return !normalizeGuestAuthorName(authorName);
 }
 
 function blobToFile(blob, fileName) {
@@ -332,23 +508,107 @@ function setGuestUploaderState(enabled) {
   }
 }
 
+function isImageStorageObject(entry) {
+  if (!entry || !entry.name || entry.name.endsWith('/')) return false;
+  const mimeType = String(entry.metadata?.mimetype || '').toLowerCase();
+  if (mimeType.startsWith('image/')) return true;
+  return /\.(avif|webp|jpe?g|png|gif|heic|heif)$/i.test(entry.name);
+}
+
+function handleGuestImageLoadError(event) {
+  const image = event.currentTarget;
+  if (!image || !guestGallery) return;
+
+  const card = image.closest('.guest-photo-card');
+  const photoName = card?.dataset?.photoName || '';
+  if (photoName) {
+    guestGalleryItems = guestGalleryItems.filter((item) => item.name !== photoName);
+  }
+  if (card) card.remove();
+
+  if (!guestGalleryItems.length) {
+    renderGuestGalleryEmpty('Per ora non vediamo foto valide: caricane una nuova.');
+    return;
+  }
+
+  renderGuestGallery(guestGalleryItems);
+}
+
+function getMosaicVariantClass(index) {
+  const pattern = ['is-square', 'is-wide', 'is-tall', 'is-square', 'is-square', 'is-wide'];
+  return pattern[index % pattern.length];
+}
+
+function openLightbox(index) {
+  if (!photoLightbox || !lightboxImage || !guestGalleryItems.length) return;
+  const safeIndex = ((index % guestGalleryItems.length) + guestGalleryItems.length) % guestGalleryItems.length;
+  const image = guestGalleryItems[safeIndex];
+  if (!image) return;
+
+  currentLightboxIndex = safeIndex;
+  lightboxImage.src = image.url;
+  lightboxImage.alt = `Foto di ${image.author}`;
+  photoLightbox.classList.add('is-open');
+  photoLightbox.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('lightbox-open');
+}
+
+function closeLightbox() {
+  if (!photoLightbox || !lightboxImage) return;
+  photoLightbox.classList.remove('is-open');
+  photoLightbox.setAttribute('aria-hidden', 'true');
+  lightboxImage.src = '';
+  document.body.classList.remove('lightbox-open');
+}
+
+function showNextLightboxImage(direction) {
+  if (!guestGalleryItems.length) return;
+  openLightbox(currentLightboxIndex + direction);
+}
+
 function renderGuestGallery(images) {
   if (!guestGallery) return;
 
   if (!images.length) {
-    guestGallery.innerHTML = '<p class="guest-gallery-empty">Nessuna foto caricata per ora.</p>';
+    if (viewAllPhotosButton) viewAllPhotosButton.hidden = true;
+    guestGallery.classList.add('is-empty');
+    guestGallery.innerHTML = `
+      <div class="guest-gallery-empty">
+        <strong>Album ancora vuoto</strong>
+        Carica la prima foto e inaugura il carosello dei ricordi.
+      </div>
+    `;
     return;
   }
 
+  guestGallery.classList.remove('is-empty');
   guestGallery.innerHTML = images
-    .map(
-      (image) => `
-      <figure class="guest-photo-card">
-        <img src="${image.url}" alt="Foto degli invitati" loading="lazy" />
+    .map((image, index) => {
+      const variantClass = getMosaicVariantClass(index);
+      return `
+      <figure class="guest-photo-card ${variantClass}" data-photo-name="${image.name}" data-photo-index="${index}">
+        <img src="${image.url}" alt="Foto di ${escapeHtml(image.author)}" loading="lazy" />
+        <figcaption class="guest-photo-author">${escapeHtml(image.author)}</figcaption>
       </figure>
-    `
-    )
+    `;
+    })
     .join('');
+
+  guestGallery.querySelectorAll('.guest-photo-card img').forEach((img) => {
+    img.addEventListener('error', handleGuestImageLoadError, { once: true });
+  });
+}
+
+function renderGuestGalleryEmpty(message) {
+  if (!guestGallery) return;
+  if (viewAllPhotosButton) viewAllPhotosButton.hidden = true;
+  guestGallery.classList.add('is-empty');
+  guestGallery.innerHTML = `
+    <div class="guest-gallery-empty">
+      <strong>Album ancora vuoto</strong>
+      ${message}
+    </div>
+  `;
 }
 
 async function loadGuestPhotos() {
@@ -358,30 +618,43 @@ async function loadGuestPhotos() {
 
   const { data, error } = await supabaseClient.storage
     .from(bucket)
-    .list('', { limit: 200, offset: 0, sortBy: { column: 'created_at', order: 'desc' } });
+    .list('', {
+      limit: HOME_GUEST_GALLERY_MAX_ITEMS + 1,
+      offset: 0,
+      sortBy: { column: 'created_at', order: 'desc' }
+    });
 
   if (error) {
     console.error('Errore caricamento galleria invitati:', error);
     setUploadStatus('Non riesco a leggere la galleria. Controlla il bucket Supabase.');
+    renderGuestGalleryEmpty('Per ora non vediamo foto: riprova tra poco.');
     return;
   }
 
-  const images = (data || [])
-    .filter((entry) => entry.name && !entry.name.endsWith('/'))
+  const pageItems = (data || [])
+    .filter((entry) => isImageStorageObject(entry))
     .map((entry) => {
       const publicData = supabaseClient.storage.from(bucket).getPublicUrl(entry.name);
       return {
         name: entry.name,
         createdAt: entry.created_at || entry.updated_at || '',
+        author: getAuthorFromPhotoName(entry.name),
         url: publicData.data.publicUrl
       };
-    })
-    .sort((a, b) => getImageSortKey(b) - getImageSortKey(a));
+    });
 
-  renderGuestGallery(images);
+  guestGalleryItems = pageItems
+    .sort((a, b) => getImageSortKey(b) - getImageSortKey(a))
+    .slice(0, HOME_GUEST_GALLERY_MAX_ITEMS);
+
+  if (viewAllPhotosButton) {
+    viewAllPhotosButton.hidden = pageItems.length <= HOME_GUEST_GALLERY_MAX_ITEMS;
+  }
+
+  renderGuestGallery(guestGalleryItems);
 }
 
-async function uploadGuestPhotos(files) {
+async function uploadGuestPhotos(files, authorName) {
   if (!supabaseClient || !files.length) return;
   const { bucket } = window.SUPABASE_CONFIG || {};
   if (!bucket) return;
@@ -402,7 +675,7 @@ async function uploadGuestPhotos(files) {
       continue;
     }
 
-    const path = getGuestPhotoPath(optimizedFile);
+    const path = getGuestPhotoPath(optimizedFile, authorName);
     const { error } = await supabaseClient.storage.from(bucket).upload(path, optimizedFile, {
       upsert: false,
       cacheControl: '3600',
@@ -421,12 +694,10 @@ async function uploadGuestPhotos(files) {
   }
 
   await loadGuestPhotos();
-  if (completed > 0 && skipped > 0) {
-    setUploadStatus(`Caricate ${completed} foto. ${skipped} saltate per limite 1.5MB.`);
-  } else if (completed > 0) {
-    setUploadStatus('Foto caricate con successo.');
-  } else if (skipped > 0) {
+  if (completed === 0 && skipped > 0) {
     setUploadStatus('Nessuna foto caricata: tutte oltre 1.5MB dopo ottimizzazione.');
+  } else {
+    setUploadStatus('');
   }
   setGuestUploaderState(true);
 }
@@ -436,6 +707,7 @@ function initGuestGallery() {
   if (!window.supabase || typeof window.supabase.createClient !== 'function') {
     setUploadStatus('Upload non disponibile: libreria Supabase non caricata.');
     setGuestUploaderState(false);
+    renderGuestGalleryEmpty('Caricamento non disponibile al momento.');
     return;
   }
 
@@ -443,7 +715,7 @@ function initGuestGallery() {
   if (!url || !anonKey || !bucket) {
     setUploadStatus('Configura SUPABASE_CONFIG in config.js per abilitare la galleria.');
     setGuestUploaderState(false);
-    renderGuestGallery([]);
+    renderGuestGalleryEmpty('Manca la configurazione per mostrare le foto.');
     return;
   }
 
@@ -454,8 +726,18 @@ function initGuestGallery() {
     }
   });
 
-  guestUploadTrigger.addEventListener('click', () => {
+  guestUploadTrigger.addEventListener('click', async () => {
     if (!guestUploadsEnabled) return;
+    const authorName = await ensureGuestAuthorName();
+    if (authorName === null) {
+      setUploadStatus('Upload annullato.');
+      return;
+    }
+    if (isGuestAuthorNameMissing(authorName)) {
+      setUploadStatus('Inserisci un nome prima di caricare le foto.');
+      return;
+    }
+    pendingGuestAuthorName = authorName;
     guestUploadInput.click();
   });
 
@@ -467,12 +749,55 @@ function initGuestGallery() {
       setUploadStatus('Seleziona almeno una foto valida.');
       return;
     }
-    await uploadGuestPhotos(files);
+    const authorName = await resolveGuestAuthorName();
+    if (authorName === null) {
+      setUploadStatus('Upload annullato.');
+      guestUploadInput.value = '';
+      pendingGuestAuthorName = '';
+      return;
+    }
+    if (isGuestAuthorNameMissing(authorName)) {
+      setUploadStatus('Inserisci un nome prima di caricare le foto.');
+      guestUploadInput.value = '';
+      pendingGuestAuthorName = '';
+      return;
+    }
+    await uploadGuestPhotos(files, authorName);
     guestUploadInput.value = '';
+    pendingGuestAuthorName = '';
   });
 
+  guestGallery.addEventListener('click', (event) => {
+    const card = event.target.closest('.guest-photo-card');
+    if (!card) return;
+    const index = Number.parseInt(card.dataset.photoIndex || '-1', 10);
+    if (index < 0) return;
+    openLightbox(index);
+  });
+
+  if (photoLightbox && lightboxCloseButton && lightboxPrevButton && lightboxNextButton) {
+    lightboxCloseButton.addEventListener('click', closeLightbox);
+    lightboxPrevButton.addEventListener('click', () => showNextLightboxImage(-1));
+    lightboxNextButton.addEventListener('click', () => showNextLightboxImage(1));
+    photoLightbox.addEventListener('click', (event) => {
+      if (event.target === photoLightbox) {
+        closeLightbox();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (!photoLightbox.classList.contains('is-open')) return;
+      if (event.key === 'Escape') {
+        closeLightbox();
+      } else if (event.key === 'ArrowLeft') {
+        showNextLightboxImage(-1);
+      } else if (event.key === 'ArrowRight') {
+        showNextLightboxImage(1);
+      }
+    });
+  }
+
   setGuestUploaderState(true);
-  setUploadStatus('Seleziona una o più foto da caricare.');
   loadGuestPhotos();
 }
 
@@ -528,6 +853,7 @@ if (openMapsButton) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  setHeroPhotoForTheme();
   initIbanDisplay();
   initIbanCopy();
   hydrateMapLinks();
@@ -542,10 +868,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
 if (typeof darkSchemeQuery.addEventListener === 'function') {
   darkSchemeQuery.addEventListener('change', () => {
+    setHeroPhotoForTheme();
     if (!usesAppleMap) initMapLibreMap();
   });
 } else if (typeof darkSchemeQuery.addListener === 'function') {
   darkSchemeQuery.addListener(() => {
+    setHeroPhotoForTheme();
     if (!usesAppleMap) initMapLibreMap();
   });
 }

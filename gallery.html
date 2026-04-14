@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tutte le Foto | Eleonora & Luca</title>
+    <meta
+      name="description"
+      content="Galleria completa delle foto caricate dagli invitati al matrimonio di Eleonora e Luca."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main>
+      <section class="section">
+        <div class="container">
+          <div class="guest-gallery-topline">
+            <div class="section-head guest-gallery-head">
+              <p class="eyebrow">Tutti i ricordi</p>
+              <h1 class="gallery-page-title">Album completo del matrimonio</h1>
+            </div>
+            <button class="btn btn-primary" id="gallery-upload-trigger" type="button">
+              Aggiungi foto
+            </button>
+          </div>
+
+          <p class="guest-gallery-copy">
+            Qui trovi tutti gli scatti caricati dagli invitati, in ordine dalle più recenti.
+            Tocca una foto per aprirla a schermo intero.
+          </p>
+
+          <input
+            id="gallery-photos"
+            class="visually-hidden"
+            type="file"
+            accept="image/*"
+            multiple
+          />
+          <p class="upload-status" id="gallery-status" role="status" aria-live="polite"></p>
+
+          <div class="guest-gallery-grid is-empty" id="all-photos-gallery" aria-live="polite">
+            <div class="guest-gallery-empty">
+              <strong>Album ancora vuoto</strong>
+              Sii il primo a lasciare un ricordo: carica una foto e apri le danze.
+            </div>
+          </div>
+          <div class="gallery-sentinel" id="gallery-sentinel" aria-hidden="true"></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="photo-lightbox" id="photo-lightbox" aria-hidden="true">
+      <button class="lightbox-close" id="lightbox-close" type="button" aria-label="Chiudi foto">
+        ×
+      </button>
+      <button class="lightbox-nav lightbox-prev" id="lightbox-prev" type="button" aria-label="Foto precedente">
+        ‹
+      </button>
+      <figure class="lightbox-frame">
+        <img id="lightbox-image" alt="Foto invitati a schermo intero" />
+      </figure>
+      <button class="lightbox-nav lightbox-next" id="lightbox-next" type="button" aria-label="Foto successiva">
+        ›
+      </button>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="gallery-page.js"></script>
+  </body>
+</html>
