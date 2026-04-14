@@ -314,54 +314,28 @@ p {
   border-top: 1px solid var(--border);
 }
 
-.map-layout {
-  display: grid;
-  gap: 1.2rem;
-}
-
-.map-heading-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: nowrap;
-}
-
-.map-copy p {
-  margin-top: 1rem;
-  color: var(--muted);
-}
-
-.map-actions {
-  display: flex;
-  margin-top: 0;
-}
-
-.map-heading-row .map-actions {
-  flex-shrink: 0;
-}
-
-.map-preview {
+.program-map-preview {
   position: relative;
-  border-radius: 18px;
+  border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--border);
   background: rgba(251, 248, 255, 0.85);
   box-shadow: var(--shadow);
+  margin-top: 1rem;
 }
 
-#wedding-map {
+.program-inline-map {
   width: 100%;
-  height: 360px;
-  min-height: 360px;
+  height: 220px;
+  min-height: 220px;
   background: transparent;
 }
 
-#wedding-map .maplibregl-map,
-#wedding-map .maplibregl-canvas-container,
-#wedding-map .maplibregl-canvas,
-#wedding-map .mk-map-view,
-#wedding-map .mk-map-view > div {
+.program-inline-map .maplibregl-map,
+.program-inline-map .maplibregl-canvas-container,
+.program-inline-map .maplibregl-canvas,
+.program-inline-map .mk-map-view,
+.program-inline-map .mk-map-view > div {
   width: 100%;
   height: 100%;
 }
@@ -369,12 +343,6 @@ p {
 .map-fallback {
   padding: 1rem;
   color: var(--muted);
-}
-
-.map-caption {
-  padding: 0.8rem 1rem;
-  color: var(--muted);
-  font-size: 0.9rem;
 }
 
 .guest-gallery-copy {
@@ -892,7 +860,7 @@ body.author-modal-open {
     border-color: rgba(206, 181, 241, 0.58);
   }
 
-  .map-preview {
+  .program-map-preview {
     background: rgba(31, 26, 42, 0.9);
   }
 
@@ -909,19 +877,18 @@ body.author-modal-open {
     color: rgba(216, 198, 245, 0.5);
   }
 
-  #wedding-map .maplibregl-ctrl-group {
+  .program-inline-map .maplibregl-ctrl-group {
     background: rgba(24, 20, 33, 0.9);
     border: 1px solid rgba(110, 92, 146, 0.7);
   }
 
-  #wedding-map .maplibregl-ctrl button .maplibregl-ctrl-icon {
+  .program-inline-map .maplibregl-ctrl button .maplibregl-ctrl-icon {
     filter: invert(1) brightness(1.35);
   }
 }
 
 @media (max-width: 980px) {
-  .cards-grid,
-  .map-layout {
+  .cards-grid {
     grid-template-columns: 1fr;
   }
 
@@ -951,18 +918,6 @@ body.author-modal-open {
   .btn {
     padding: 0.62rem 1rem;
     font-size: 0.86rem;
-  }
-
-  .map-heading-row {
-    gap: 0.55rem;
-    align-items: center;
-  }
-
-  .map-actions .btn {
-    padding: 0.42rem 0.72rem;
-    font-size: 0.74rem;
-    line-height: 1.1;
-    white-space: nowrap;
   }
 
   .guest-gallery-topline {

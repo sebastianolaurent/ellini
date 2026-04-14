@@ -1,7 +1,5 @@
 const ibanText = document.getElementById('iban-text');
 const feedback = document.getElementById('copy-feedback');
-const mapContainer = document.getElementById('wedding-map');
-const openMapsButton = document.getElementById('open-maps');
 const heroPhoto = document.querySelector('.hero-photo');
 const guestUploadTrigger = document.getElementById('guest-upload-trigger');
 const guestUploadInput = document.getElementById('guest-photos');
@@ -19,8 +17,6 @@ const authorModalInput = document.getElementById('author-name-input');
 const authorModalError = document.getElementById('author-modal-error');
 const authorModalCancel = document.getElementById('author-modal-cancel');
 const authorModalClose = document.getElementById('author-modal-close');
-const MAP_COORDS = { lat: 44.7692730, lon: 9.3862814 };
-const MAP_LABEL = 'Agriturismo Il Torrione del Trebbia, Bobbio (PC)';
 const MAX_GUEST_PHOTO_BYTES = 1.5 * 1024 * 1024;
 const MAX_GUEST_PHOTO_DIMENSION = 2200;
 const MIN_GUEST_PHOTO_DIMENSION = 960;
@@ -28,7 +24,7 @@ const HOME_GUEST_GALLERY_MAX_ITEMS = 6;
 const GUEST_AUTHOR_STORAGE_KEY = 'weddingGuestAuthorName';
 const DEFAULT_GUEST_AUTHOR = 'Invitato';
 const darkSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-let mapInstance = null;
+let mapInstances = [];
 let usesAppleMap = false;
 let supabaseClient = null;
 let guestUploadsEnabled = false;
@@ -36,10 +32,11 @@ let guestGalleryItems = [];
 let currentLightboxIndex = 0;
 let pendingGuestAuthorName = '';
 let cachedGuestAuthorName = '';
+let mapTargets = [];
 
-function showMapMessage(message) {
-  if (!mapContainer) return;
-  mapContainer.innerHTML = `<p class="map-fallback">${message}</p>`;
+function showMapMessage(container, message) {
+  if (!container) return;
+  container.innerHTML = `<p class="map-fallback">${message}</p>`;
 }
 
 function setUploadStatus(message) {
@@ -88,12 +85,37 @@ function hydrateMapLinks() {
     const targetUrl = getPreferredMapsUrl(lat, lon, label || 'Destinazione');
     link.setAttribute('href', targetUrl);
   });
+}
 
-  if (openMapsButton) {
-    const { lat, lon, label } = openMapsButton.dataset;
-    const targetUrl = getPreferredMapsUrl(lat, lon, label || 'Destinazione');
-    openMapsButton.setAttribute('href', targetUrl);
-  }
+function initMapLinkClicks() {
+  const mapLinks = document.querySelectorAll('.js-map-link');
+  mapLinks.forEach((link) => {
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const { lat, lon, label } = link.dataset;
+      const targetUrl = getPreferredMapsUrl(lat, lon, label || 'Destinazione');
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    });
+  });
+}
+
+function getMapTargets() {
+  return Array.from(document.querySelectorAll('.js-inline-map'))
+    .map((container) => {
+      const { lat, lon, label } = container.dataset;
+      const parsedLat = Number.parseFloat(lat);
+      const parsedLon = Number.parseFloat(lon);
+      if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLon)) {
+        return null;
+      }
+      return {
+        container,
+        lat: parsedLat,
+        lon: parsedLon,
+        label: label || 'Destinazione'
+      };
+    })
+    .filter(Boolean);
 }
 
 function normalizeIban(text) {
@@ -179,39 +201,47 @@ function initIbanCopy() {
 }
 
 function initMapLibreMap() {
-  if (!mapContainer || typeof maplibregl === 'undefined') {
-    showMapMessage('Mappa non disponibile al momento. Usa il pulsante "Apri su Mappe".');
+  if (!mapTargets.length) return;
+  if (typeof maplibregl === 'undefined') {
+    mapTargets.forEach((target) => {
+      showMapMessage(target.container, 'Mappa non disponibile al momento. Usa il pulsante "Apri su Mappe".');
+    });
     return;
   }
 
-  if (mapInstance) {
-    mapInstance.remove();
-    mapInstance = null;
+  if (mapInstances.length) {
+    mapInstances.forEach((instance) => {
+      if (instance && typeof instance.remove === 'function') {
+        instance.remove();
+      }
+    });
   }
-
-  mapContainer.innerHTML = '';
+  mapInstances = [];
   const styleUrl = darkSchemeQuery.matches
     ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
     : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
-  const map = new maplibregl.Map({
-    container: 'wedding-map',
-    style: styleUrl,
-    center: [MAP_COORDS.lon, MAP_COORDS.lat],
-    zoom: 14.8,
-    attributionControl: true
+  mapTargets.forEach((target) => {
+    target.container.innerHTML = '';
+    const map = new maplibregl.Map({
+      container: target.container,
+      style: styleUrl,
+      center: [target.lon, target.lat],
+      zoom: 15,
+      attributionControl: false
+    });
+    mapInstances.push(map);
+
+    map.scrollZoom.disable();
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+    const popup = new maplibregl.Popup({ offset: 20 }).setText(target.label);
+
+    new maplibregl.Marker({ color: '#b99be4' })
+      .setLngLat([target.lon, target.lat])
+      .setPopup(popup)
+      .addTo(map);
   });
-  mapInstance = map;
-
-  map.scrollZoom.disable();
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-
-  const popup = new maplibregl.Popup({ offset: 20 }).setText(MAP_LABEL);
-
-  new maplibregl.Marker({ color: '#b99be4' })
-    .setLngLat([MAP_COORDS.lon, MAP_COORDS.lat])
-    .setPopup(popup)
-    .addTo(map);
 }
 
 function safeFileName(name) {
@@ -802,7 +832,7 @@ function initGuestGallery() {
 }
 
 function initAppleMap() {
-  if (!mapContainer || typeof mapkit === 'undefined' || !window.MAPKIT_JWT) {
+  if (!mapTargets.length || typeof mapkit === 'undefined' || !window.MAPKIT_JWT) {
     return false;
   }
 
@@ -821,21 +851,23 @@ function initAppleMap() {
       }
     });
 
-    const center = new mapkit.Coordinate(MAP_COORDS.lat, MAP_COORDS.lon);
-    const map = new mapkit.Map('wedding-map', {
-      center,
-      isRotationEnabled: false,
-      isZoomEnabled: true,
-      showsCompass: mapkit.FeatureVisibility.Hidden,
-      showsMapTypeControl: false
+    mapTargets.forEach((target) => {
+      const center = new mapkit.Coordinate(target.lat, target.lon);
+      const map = new mapkit.Map(target.container.id, {
+        center,
+        isRotationEnabled: false,
+        isZoomEnabled: true,
+        showsCompass: mapkit.FeatureVisibility.Hidden,
+        showsMapTypeControl: false
+      });
+
+      map.region = new mapkit.CoordinateRegion(
+        center,
+        new mapkit.CoordinateSpan(0.01, 0.01)
+      );
+
+      map.addAnnotation(new mapkit.MarkerAnnotation(center, { title: target.label }));
     });
-
-    map.region = new mapkit.CoordinateRegion(
-      center,
-      new mapkit.CoordinateSpan(0.015, 0.02)
-    );
-
-    map.addAnnotation(new mapkit.MarkerAnnotation(center, { title: MAP_LABEL }));
     return true;
   } catch (error) {
     console.warn('Apple Maps non disponibile, fallback MapLibre:', error);
@@ -843,20 +875,13 @@ function initAppleMap() {
   }
 }
 
-if (openMapsButton) {
-  openMapsButton.addEventListener('click', (event) => {
-    event.preventDefault();
-    const { lat, lon, label } = openMapsButton.dataset;
-    const targetUrl = getPreferredMapsUrl(lat, lon, label || 'Destinazione');
-    window.open(targetUrl, '_blank', 'noopener,noreferrer');
-  });
-}
-
 window.addEventListener('DOMContentLoaded', () => {
   setHeroPhotoForTheme();
   initIbanDisplay();
   initIbanCopy();
   hydrateMapLinks();
+  initMapLinkClicks();
+  mapTargets = getMapTargets();
   initGuestGallery();
   if (!initAppleMap()) {
     usesAppleMap = false;
