@@ -2,15 +2,29 @@ const ibanText = document.getElementById('iban-text');
 const feedback = document.getElementById('copy-feedback');
 const mapContainer = document.getElementById('wedding-map');
 const openMapsButton = document.getElementById('open-maps');
+const guestUploadTrigger = document.getElementById('guest-upload-trigger');
+const guestUploadInput = document.getElementById('guest-photos');
+const guestUploadStatus = document.getElementById('upload-status');
+const guestGallery = document.getElementById('guest-gallery');
 const MAP_COORDS = { lat: 44.7692730, lon: 9.3862814 };
 const MAP_LABEL = 'Agriturismo Il Torrione del Trebbia, Bobbio (PC)';
+const MAX_GUEST_PHOTO_BYTES = 1.5 * 1024 * 1024;
+const MAX_GUEST_PHOTO_DIMENSION = 2200;
+const MIN_GUEST_PHOTO_DIMENSION = 960;
 const darkSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
 let mapInstance = null;
 let usesAppleMap = false;
+let supabaseClient = null;
+let guestUploadsEnabled = false;
 
 function showMapMessage(message) {
   if (!mapContainer) return;
   mapContainer.innerHTML = `<p class="map-fallback">${message}</p>`;
+}
+
+function setUploadStatus(message) {
+  if (!guestUploadStatus) return;
+  guestUploadStatus.textContent = message;
 }
 
 function parseJwtPayload(token) {
@@ -175,6 +189,293 @@ function initMapLibreMap() {
     .addTo(map);
 }
 
+function safeFileName(name) {
+  return (name || 'foto')
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9._-]/g, '')
+    .slice(0, 70) || 'foto';
+}
+
+function getFileBaseName(name) {
+  return safeFileName(name).replace(/\.[a-z0-9]+$/i, '') || 'foto';
+}
+
+function getGuestPhotoPath(file) {
+  const uniqueId =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+  return `${Date.now()}-${uniqueId}-${getFileBaseName(file.name)}.jpg`;
+}
+
+function blobToFile(blob, fileName) {
+  return new File([blob], fileName, {
+    type: blob.type || 'image/jpeg',
+    lastModified: Date.now()
+  });
+}
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => resolve({ image, objectUrl });
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Immagine non leggibile'));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function canvasToBlob(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('Compressione non riuscita'));
+        return;
+      }
+      resolve(blob);
+    }, 'image/jpeg', quality);
+  });
+}
+
+async function compressGuestPhoto(file) {
+  if ((file.type || '').toLowerCase() === 'image/gif') {
+    return file;
+  }
+
+  if (file.size <= MAX_GUEST_PHOTO_BYTES) {
+    return file;
+  }
+
+  const { image, objectUrl } = await loadImageFromFile(file);
+  try {
+    const sourceWidth = image.naturalWidth || image.width;
+    const sourceHeight = image.naturalHeight || image.height;
+    const initialScale = Math.min(1, MAX_GUEST_PHOTO_DIMENSION / Math.max(sourceWidth, sourceHeight));
+
+    let width = Math.max(1, Math.round(sourceWidth * initialScale));
+    let height = Math.max(1, Math.round(sourceHeight * initialScale));
+    let quality = 0.86;
+    let bestBlob = null;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return file;
+    }
+
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      canvas.width = width;
+      canvas.height = height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(image, 0, 0, width, height);
+
+      const blob = await canvasToBlob(canvas, quality);
+      if (!bestBlob || blob.size < bestBlob.size) {
+        bestBlob = blob;
+      }
+      if (blob.size <= MAX_GUEST_PHOTO_BYTES) {
+        bestBlob = blob;
+        break;
+      }
+
+      if (quality > 0.5) {
+        quality = Math.max(0.48, quality - 0.08);
+        continue;
+      }
+
+      const nextWidth = Math.round(width * 0.85);
+      const nextHeight = Math.round(height * 0.85);
+
+      if (
+        nextWidth === width ||
+        nextHeight === height ||
+        Math.max(nextWidth, nextHeight) <= MIN_GUEST_PHOTO_DIMENSION
+      ) {
+        break;
+      }
+
+      width = nextWidth;
+      height = nextHeight;
+      quality = 0.8;
+    }
+
+    if (!bestBlob) {
+      return file;
+    }
+
+    const outputName = `${getFileBaseName(file.name)}.jpg`;
+    return blobToFile(bestBlob, outputName);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+function getImageSortKey(image) {
+  const createdAtMs = new Date(image.createdAt || '').getTime();
+  if (Number.isFinite(createdAtMs) && createdAtMs > 0) {
+    return createdAtMs;
+  }
+
+  const prefix = Number.parseInt(String(image.name || '').split('-')[0], 10);
+  return Number.isFinite(prefix) ? prefix : 0;
+}
+
+function setGuestUploaderState(enabled) {
+  guestUploadsEnabled = enabled;
+  if (guestUploadTrigger) {
+    guestUploadTrigger.disabled = !enabled;
+  }
+}
+
+function renderGuestGallery(images) {
+  if (!guestGallery) return;
+
+  if (!images.length) {
+    guestGallery.innerHTML = '<p class="guest-gallery-empty">Nessuna foto caricata per ora.</p>';
+    return;
+  }
+
+  guestGallery.innerHTML = images
+    .map(
+      (image) => `
+      <figure class="guest-photo-card">
+        <img src="${image.url}" alt="Foto degli invitati" loading="lazy" />
+      </figure>
+    `
+    )
+    .join('');
+}
+
+async function loadGuestPhotos() {
+  if (!supabaseClient || !guestGallery) return;
+  const { bucket } = window.SUPABASE_CONFIG || {};
+  if (!bucket) return;
+
+  const { data, error } = await supabaseClient.storage
+    .from(bucket)
+    .list('', { limit: 200, offset: 0, sortBy: { column: 'created_at', order: 'desc' } });
+
+  if (error) {
+    console.error('Errore caricamento galleria invitati:', error);
+    setUploadStatus('Non riesco a leggere la galleria. Controlla il bucket Supabase.');
+    return;
+  }
+
+  const images = (data || [])
+    .filter((entry) => entry.name && !entry.name.endsWith('/'))
+    .map((entry) => {
+      const publicData = supabaseClient.storage.from(bucket).getPublicUrl(entry.name);
+      return {
+        name: entry.name,
+        createdAt: entry.created_at || entry.updated_at || '',
+        url: publicData.data.publicUrl
+      };
+    })
+    .sort((a, b) => getImageSortKey(b) - getImageSortKey(a));
+
+  renderGuestGallery(images);
+}
+
+async function uploadGuestPhotos(files) {
+  if (!supabaseClient || !files.length) return;
+  const { bucket } = window.SUPABASE_CONFIG || {};
+  if (!bucket) return;
+
+  setGuestUploaderState(false);
+  setUploadStatus(`Caricamento di ${files.length} foto in corso...`);
+
+  let completed = 0;
+  let skipped = 0;
+  for (const file of files) {
+    setUploadStatus(`Ottimizzo foto ${completed + 1}/${files.length}...`);
+    const optimizedFile = await compressGuestPhoto(file);
+    if (optimizedFile.size > MAX_GUEST_PHOTO_BYTES) {
+      skipped += 1;
+      setUploadStatus(
+        'Una o piu foto superano 1.5MB anche dopo ottimizzazione. Salta quelle immagini.'
+      );
+      continue;
+    }
+
+    const path = getGuestPhotoPath(optimizedFile);
+    const { error } = await supabaseClient.storage.from(bucket).upload(path, optimizedFile, {
+      upsert: false,
+      cacheControl: '3600',
+      contentType: optimizedFile.type || 'image/jpeg'
+    });
+
+    if (error) {
+      console.error('Errore upload foto invitato:', error);
+      setUploadStatus("Upload non riuscito per una o più foto. Riprova tra poco.");
+      setGuestUploaderState(true);
+      return;
+    }
+
+    completed += 1;
+    setUploadStatus(`Caricata ${completed}/${files.length} (max 1.5MB/foto)...`);
+  }
+
+  await loadGuestPhotos();
+  if (completed > 0 && skipped > 0) {
+    setUploadStatus(`Caricate ${completed} foto. ${skipped} saltate per limite 1.5MB.`);
+  } else if (completed > 0) {
+    setUploadStatus('Foto caricate con successo.');
+  } else if (skipped > 0) {
+    setUploadStatus('Nessuna foto caricata: tutte oltre 1.5MB dopo ottimizzazione.');
+  }
+  setGuestUploaderState(true);
+}
+
+function initGuestGallery() {
+  if (!guestUploadInput || !guestUploadTrigger || !guestGallery) return;
+  if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+    setUploadStatus('Upload non disponibile: libreria Supabase non caricata.');
+    setGuestUploaderState(false);
+    return;
+  }
+
+  const { url, anonKey, bucket } = window.SUPABASE_CONFIG || {};
+  if (!url || !anonKey || !bucket) {
+    setUploadStatus('Configura SUPABASE_CONFIG in config.js per abilitare la galleria.');
+    setGuestUploaderState(false);
+    renderGuestGallery([]);
+    return;
+  }
+
+  supabaseClient = window.supabase.createClient(url, anonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
+
+  guestUploadTrigger.addEventListener('click', () => {
+    if (!guestUploadsEnabled) return;
+    guestUploadInput.click();
+  });
+
+  guestUploadInput.addEventListener('change', async (event) => {
+    const files = Array.from(event.target.files || []).filter((file) =>
+      (file.type || '').startsWith('image/')
+    );
+    if (!files.length) {
+      setUploadStatus('Seleziona almeno una foto valida.');
+      return;
+    }
+    await uploadGuestPhotos(files);
+    guestUploadInput.value = '';
+  });
+
+  setGuestUploaderState(true);
+  setUploadStatus('Seleziona una o più foto da caricare.');
+  loadGuestPhotos();
+}
+
 function initAppleMap() {
   if (!mapContainer || typeof mapkit === 'undefined' || !window.MAPKIT_JWT) {
     return false;
@@ -230,6 +531,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initIbanDisplay();
   initIbanCopy();
   hydrateMapLinks();
+  initGuestGallery();
   if (!initAppleMap()) {
     usesAppleMap = false;
     initMapLibreMap();

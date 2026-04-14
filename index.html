@@ -202,6 +202,35 @@
         </div>
       </section>
 
+      <section class="section guest-gallery-section" id="foto-invitati">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">I vostri scatti</p>
+            <h2>Galleria degli invitati</h2>
+          </div>
+
+          <p class="guest-gallery-copy">
+            Caricate qui le foto della giornata: compariranno automaticamente nella galleria.
+          </p>
+
+          <div class="guest-uploader">
+            <button class="btn btn-primary" id="guest-upload-trigger" type="button">
+              Aggiungi foto
+            </button>
+            <input
+              id="guest-photos"
+              class="visually-hidden"
+              type="file"
+              accept="image/*"
+              multiple
+            />
+            <p class="upload-status" id="upload-status" role="status" aria-live="polite"></p>
+          </div>
+
+          <div class="guest-gallery-grid" id="guest-gallery" aria-live="polite"></div>
+        </div>
+      </section>
+
     </main>
 
     <footer class="footer">
@@ -212,6 +241,7 @@
     </footer>
 
     <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js" crossorigin></script>
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" crossorigin=""></script>
     <script src="script.js"></script>
