@@ -581,8 +581,29 @@ p {
     margin-bottom: 1.4rem;
   }
 
-  .checklist-grid,
-  .gallery-grid {
+  .checklist-grid {
     grid-template-columns: 1fr;
+  }
+
+  .gallery-grid {
+    display: flex;
+    gap: 0.7rem;
+    overflow-x: auto;
+    padding: 0 0.1rem 0.35rem;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 0.1rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .gallery-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gallery-grid img {
+    flex: 0 0 84%;
+    max-width: 84%;
+    aspect-ratio: 4 / 3;
+    scroll-snap-align: center;
   }
 }
