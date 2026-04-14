@@ -73,7 +73,9 @@ function setUploadStatus(message) {
 
 function setHeroPhotoForTheme() {
   if (!heroPhoto) return;
-  heroPhoto.src = darkSchemeQuery.matches ? 'assets/images/hero.webp' : 'assets/images/gallery-2.webp';
+  heroPhoto.src = darkSchemeQuery.matches
+    ? 'assets/images/hero-dark.webp'
+    : 'assets/images/hero-light.webp';
 }
 
 function parseJwtPayload(token) {
