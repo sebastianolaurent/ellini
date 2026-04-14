@@ -102,7 +102,7 @@ function initMapLinkClicks() {
 function getMapTargets() {
   return Array.from(document.querySelectorAll('.js-inline-map'))
     .map((container) => {
-      const { lat, lon, label } = container.dataset;
+      const { lat, lon, label, pinTitle } = container.dataset;
       const parsedLat = Number.parseFloat(lat);
       const parsedLon = Number.parseFloat(lon);
       if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLon)) {
@@ -112,7 +112,8 @@ function getMapTargets() {
         container,
         lat: parsedLat,
         lon: parsedLon,
-        label: label || 'Destinazione'
+        label: label || 'Destinazione',
+        pinTitle: pinTitle || label || 'Destinazione'
       };
     })
     .filter(Boolean);
@@ -235,7 +236,7 @@ function initMapLibreMap() {
     map.scrollZoom.disable();
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
-    const popup = new maplibregl.Popup({ offset: 20 }).setText(target.label);
+    const popup = new maplibregl.Popup({ offset: 20 }).setText(target.pinTitle);
 
     new maplibregl.Marker({ color: '#b99be4' })
       .setLngLat([target.lon, target.lat])
@@ -866,7 +867,7 @@ function initAppleMap() {
         new mapkit.CoordinateSpan(0.01, 0.01)
       );
 
-      map.addAnnotation(new mapkit.MarkerAnnotation(center, { title: target.label }));
+      map.addAnnotation(new mapkit.MarkerAnnotation(center, { title: target.pinTitle }));
     });
     return true;
   } catch (error) {
