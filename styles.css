@@ -141,6 +141,17 @@ p {
   z-index: 2;
   color: #fffdf8;
   text-align: center;
+  text-shadow: 0 2px 16px rgba(34, 21, 54, 0.45);
+}
+
+.hero-content .eyebrow {
+  display: inline-block;
+  color: #f9f2ff;
+  background: rgba(63, 41, 93, 0.46);
+  border: 1px solid rgba(238, 224, 255, 0.55);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  backdrop-filter: blur(2px);
 }
 
 .hero-content h1 span {
@@ -157,7 +168,7 @@ p {
 .hero-copy {
   width: min(660px, 90%);
   margin: 1.5rem auto 2rem;
-  color: #f9f2e9;
+  color: #f6f1ff;
 }
 
 .section-head {
@@ -253,6 +264,14 @@ p {
   font-size: 0.9rem;
 }
 
+.venue-gallery {
+  margin-top: 2rem;
+}
+
+.venue-gallery h3 {
+  margin-bottom: 1rem;
+}
+
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -269,7 +288,7 @@ p {
 
 .gift-box {
   text-align: center;
-  background: linear-gradient(170deg, rgba(255, 250, 242, 0.85), rgba(245, 235, 221, 0.95));
+  background: linear-gradient(170deg, rgba(244, 238, 255, 0.88), rgba(230, 218, 248, 0.95));
   border: 1px solid var(--border);
   border-radius: 24px;
   box-shadow: var(--shadow);
@@ -287,7 +306,7 @@ p {
   padding: 1rem;
   border: 1px dashed var(--accent);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.66);
+  background: rgba(248, 244, 255, 0.78);
 }
 
 .iban {
