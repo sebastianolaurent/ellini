@@ -34,48 +34,44 @@ function getPreferredMapsUrl(lat, lon, label) {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
 }
 
-function initLeafletMap() {
-  if (!mapContainer || typeof L === 'undefined') {
+function initMapLibreMap() {
+  if (!mapContainer || typeof maplibregl === 'undefined') {
     showMapMessage('Mappa non disponibile al momento. Usa il pulsante "Apri su Mappe".');
     return;
   }
 
   mapContainer.innerHTML = '';
-  const coords = [MAP_COORDS.lat, MAP_COORDS.lon];
-  const map = L.map('wedding-map', { scrollWheelZoom: false }).setView(coords, 15);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+  const map = new maplibregl.Map({
+    container: 'wedding-map',
+    style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+    center: [MAP_COORDS.lon, MAP_COORDS.lat],
+    zoom: 14.8,
+    attributionControl: true
+  });
 
-  L.marker(coords).addTo(map).bindPopup(MAP_LABEL);
+  map.scrollZoom.disable();
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+  const popup = new maplibregl.Popup({ offset: 20 }).setText(MAP_LABEL);
+
+  new maplibregl.Marker({ color: '#8b6f4e' })
+    .setLngLat([MAP_COORDS.lon, MAP_COORDS.lat])
+    .setPopup(popup)
+    .addTo(map);
 }
 
 function initAppleMap() {
-  if (!mapContainer) {
-    return false;
-  }
-  if (typeof mapkit === 'undefined') {
-    showMapMessage('SDK Apple MapKit non caricato. Controlla connessione o ad blocker.');
-    return false;
-  }
-  if (!window.MAPKIT_JWT) {
-    showMapMessage('Token MapKit mancante (config.js).');
+  if (!mapContainer || typeof mapkit === 'undefined' || !window.MAPKIT_JWT) {
     return false;
   }
 
   const payload = parseJwtPayload(window.MAPKIT_JWT);
   if (!payload) {
-    showMapMessage('Token MapKit non valido (JWT malformato).');
     return false;
   }
   if (payload.exp && Date.now() / 1000 > payload.exp) {
-    showMapMessage('Token MapKit scaduto. Rigeneralo su Apple Developer.');
     return false;
-  }
-  if (!payload.origin) {
-    console.warn('JWT MapKit senza claim origin: su alcuni setup Apple Maps rifiuta il token.');
   }
 
   try {
@@ -102,16 +98,14 @@ function initAppleMap() {
     map.addAnnotation(new mapkit.MarkerAnnotation(center, { title: MAP_LABEL }));
     return true;
   } catch (error) {
-    const msg = error && error.message ? error.message : 'Errore sconosciuto MapKit';
-    showMapMessage(`Apple Maps non autorizzata: ${msg}`);
-    console.warn('Apple Maps non disponibile, fallback Leaflet:', error);
+    console.warn('Apple Maps non disponibile, fallback MapLibre:', error);
     return false;
   }
 }
 
 function hasMapRendering() {
   if (!mapContainer) return false;
-  return Boolean(mapContainer.querySelector('canvas, img, .leaflet-pane'));
+  return Boolean(mapContainer.querySelector('canvas, img, .maplibregl-canvas'));
 }
 
 if (copyButton && ibanText && feedback) {
@@ -136,14 +130,14 @@ if (openMapsButton) {
 
 window.addEventListener('DOMContentLoaded', () => {
   if (!initAppleMap()) {
-    initLeafletMap();
+    initMapLibreMap();
     return;
   }
 
   window.setTimeout(() => {
     if (!hasMapRendering()) {
       mapContainer.innerHTML = '';
-      initLeafletMap();
+      initMapLibreMap();
     }
-  }, 3500);
+  }, 3000);
 });
