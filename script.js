@@ -55,7 +55,7 @@ function initMapLibreMap() {
 
   const popup = new maplibregl.Popup({ offset: 20 }).setText(MAP_LABEL);
 
-  new maplibregl.Marker({ color: '#8b6f4e' })
+  new maplibregl.Marker({ color: '#b99be4' })
     .setLngLat([MAP_COORDS.lon, MAP_COORDS.lat])
     .setPopup(popup)
     .addTo(map);
