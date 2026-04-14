@@ -784,11 +784,11 @@ body.author-modal-open {
 
 .footer p:last-child {
   font-family: "Manrope", sans-serif;
-  font-size: 0.54rem;
+  font-size: 0.72rem;
   font-weight: 500;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: rgba(95, 82, 114, 0.58);
+  color: rgba(95, 82, 114, 0.8);
 }
 
 .footer p + p {
@@ -908,6 +908,10 @@ body.author-modal-open {
   .iban-sep,
   .iban-hint {
     color: rgba(216, 198, 245, 0.5);
+  }
+
+  .footer p:last-child {
+    color: rgba(236, 224, 255, 0.9);
   }
 
   .program-inline-map .maplibregl-ctrl-group {
