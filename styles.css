@@ -131,14 +131,18 @@ p {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  z-index: 0;
 }
 
 .hero-overlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to top, rgba(24, 16, 34, 0.62), rgba(24, 16, 34, 0.36)),
-    radial-gradient(circle at 75% 20%, rgba(230, 210, 255, 0.22), transparent 40%);
+    linear-gradient(to top, rgba(28, 20, 41, 0.18), rgba(28, 20, 41, 0.18)),
+    radial-gradient(circle at 75% 20%, rgba(230, 210, 255, 0.1), transparent 44%);
+  backdrop-filter: blur(9px) saturate(125%);
+  -webkit-backdrop-filter: blur(9px) saturate(125%);
+  z-index: 1;
 }
 
 .hero-content {
@@ -147,6 +151,13 @@ p {
   color: #fffdf8;
   text-align: center;
   text-shadow: 0 2px 16px rgba(34, 21, 54, 0.45);
+}
+
+.hero-content h1 {
+  text-shadow:
+    0 0 26px rgba(255, 255, 255, 0.92),
+    0 0 10px rgba(255, 255, 255, 0.75),
+    0 2px 14px rgba(255, 255, 255, 0.55);
 }
 
 .hero-content .eyebrow {
@@ -504,8 +515,10 @@ p {
 
   .hero-overlay {
     background:
-      linear-gradient(to top, rgba(8, 6, 13, 0.72), rgba(8, 6, 13, 0.42)),
-      radial-gradient(circle at 75% 20%, rgba(156, 120, 214, 0.24), transparent 40%);
+      linear-gradient(to top, rgba(10, 7, 15, 0.3), rgba(10, 7, 15, 0.3)),
+      radial-gradient(circle at 75% 20%, rgba(156, 120, 214, 0.1), transparent 42%);
+    backdrop-filter: blur(10px) saturate(128%);
+    -webkit-backdrop-filter: blur(10px) saturate(128%);
   }
 
   .hero-content .eyebrow {
