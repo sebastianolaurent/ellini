@@ -249,6 +249,24 @@ p {
   margin-bottom: 2rem;
 }
 
+.program-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: nowrap;
+}
+
+.program-head > div {
+  min-width: 0;
+  flex: 1;
+}
+
+#program-calendar-cta {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -891,6 +909,10 @@ body.author-modal-open {
 }
 
 @media (max-width: 980px) {
+  .program-head {
+    align-items: center;
+  }
+
   .cards-grid {
     grid-template-columns: 1fr;
   }
@@ -921,6 +943,11 @@ body.author-modal-open {
   .btn {
     padding: 0.62rem 1rem;
     font-size: 0.86rem;
+  }
+
+  #program-calendar-cta {
+    padding: 0.5rem 0.82rem;
+    font-size: 0.78rem;
   }
 
   .guest-gallery-topline {

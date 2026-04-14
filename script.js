@@ -17,6 +17,7 @@ const authorModalInput = document.getElementById('author-name-input');
 const authorModalError = document.getElementById('author-modal-error');
 const authorModalCancel = document.getElementById('author-modal-cancel');
 const authorModalClose = document.getElementById('author-modal-close');
+const programCalendarCta = document.getElementById('program-calendar-cta');
 const MAX_GUEST_PHOTO_BYTES = 1.5 * 1024 * 1024;
 const MAX_GUEST_PHOTO_DIMENSION = 2200;
 const MIN_GUEST_PHOTO_DIMENSION = 960;
@@ -33,6 +34,32 @@ let currentLightboxIndex = 0;
 let pendingGuestAuthorName = '';
 let cachedGuestAuthorName = '';
 let mapTargets = [];
+
+function isAppleDevice() {
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const touchPoints = Number(navigator.maxTouchPoints || 0);
+  const isiPadDesktopUa = /Macintosh/i.test(ua) && touchPoints > 1;
+
+  return /iPhone|iPad|iPod/i.test(ua) || /Mac/i.test(platform) || isiPadDesktopUa;
+}
+
+function initProgramCalendarCta() {
+  if (!programCalendarCta) return;
+
+  programCalendarCta.textContent = 'Aggiungi al calendario';
+  programCalendarCta.setAttribute('aria-label', 'Aggiungi al calendario');
+
+  const isApple = isAppleDevice();
+  if (isApple) {
+    programCalendarCta.setAttribute('href', 'assets/calendar/matrimonioeleonoraeluca.ics');
+    programCalendarCta.setAttribute('download', 'matrimonioeleonoraeluca.ics');
+    return;
+  }
+
+  programCalendarCta.setAttribute('href', 'assets/calendar/matrimonioeleonoraeluca-google.csv');
+  programCalendarCta.setAttribute('download', 'matrimonioeleonoraeluca-google.csv');
+}
 
 function showMapMessage(container, message) {
   if (!container) return;
@@ -878,6 +905,7 @@ function initAppleMap() {
 
 window.addEventListener('DOMContentLoaded', () => {
   setHeroPhotoForTheme();
+  initProgramCalendarCta();
   initIbanDisplay();
   initIbanCopy();
   hydrateMapLinks();
