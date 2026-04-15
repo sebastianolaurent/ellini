@@ -727,24 +727,26 @@ body.author-modal-open {
 }
 
 .iban-box {
-  width: min(100%, 700px);
-  margin: 1.5rem auto 0;
-  padding: 1rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 0.35rem auto 0;
+  padding: 0.85rem 0.8rem;
   border: 1px dashed var(--accent);
   border-radius: 16px;
   background: rgba(248, 244, 255, 0.78);
+  box-sizing: border-box;
 }
 
 .iban {
   font-family: "EB Garamond", serif;
-  font-size: clamp(1.1rem, 2.1vw, 1.45rem);
+  font-size: clamp(0.98rem, 1.8vw, 1.28rem);
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.015em;
   font-variant-numeric: tabular-nums;
   line-height: 1.35;
-  white-space: nowrap;
-  word-break: normal;
-  overflow-wrap: normal;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   color: var(--accent-dark);
 }
 
@@ -754,8 +756,8 @@ body.author-modal-open {
 
 .iban-sep {
   color: rgba(95, 82, 114, 0.32);
-  font-size: 0.72em;
-  margin: 0 0.08em;
+  font-size: 0.66em;
+  margin: 0 0.04em;
 }
 
 .iban-hint {
