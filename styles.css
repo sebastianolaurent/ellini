@@ -533,6 +533,47 @@ body.page-ready .hero-line:nth-child(5) {
   flex-shrink: 0;
 }
 
+.gallery-page .section {
+  padding-top: calc(2.2rem + env(safe-area-inset-top));
+  padding-bottom: calc(2.4rem + env(safe-area-inset-bottom));
+}
+
+.gallery-page .guest-gallery-topline {
+  animation: galleryFadeUp 420ms ease both;
+}
+
+.gallery-page .guest-gallery-copy {
+  animation: galleryFadeUp 460ms ease 80ms both;
+}
+
+.gallery-page .upload-status {
+  animation: galleryFadeUp 460ms ease 130ms both;
+}
+
+.gallery-page .guest-gallery-grid {
+  animation: galleryFadeUp 500ms ease 170ms both;
+}
+
+@keyframes galleryFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-page .guest-gallery-topline,
+  .gallery-page .guest-gallery-copy,
+  .gallery-page .upload-status,
+  .gallery-page .guest-gallery-grid {
+    animation: none !important;
+  }
+}
+
 .upload-status {
   margin: 0.8rem 0 0;
   color: var(--muted);
@@ -1183,6 +1224,11 @@ body.author-modal-open {
 }
 
 @media (max-width: 640px) {
+  .gallery-page .section {
+    padding-top: calc(1.2rem + env(safe-area-inset-top));
+    padding-bottom: calc(1.6rem + env(safe-area-inset-bottom));
+  }
+
   .btn {
     padding: 0.62rem 1rem;
     font-size: 0.86rem;
