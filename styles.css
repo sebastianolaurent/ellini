@@ -24,6 +24,8 @@
 
 html {
   scroll-behavior: smooth;
+  background: var(--bg);
+  min-height: 100%;
 }
 
 body {
@@ -32,8 +34,13 @@ body {
   color: var(--text);
   background: radial-gradient(circle at 12% 20%, #fdfaff 0%, var(--bg) 45%, #e0d3f3 100%);
   line-height: 1.5;
+  padding-top: constant(safe-area-inset-top);
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+  min-height: 100%;
 }
 
 img {
@@ -52,6 +59,7 @@ img {
 
 .section {
   padding: 5rem 0;
+  scroll-margin-top: calc(env(safe-area-inset-top) + 0.75rem);
 }
 
 .eyebrow {
@@ -153,7 +161,7 @@ p {
   display: flex;
   align-items: center;
   overflow: hidden;
-  padding-top: calc(1rem + env(safe-area-inset-top));
+  padding-top: 1rem;
   padding-bottom: calc(1rem + env(safe-area-inset-bottom));
 }
 
