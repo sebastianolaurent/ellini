@@ -194,6 +194,24 @@ function renderEmpty(message) {
   `;
 }
 
+function bindCardImageLoadingState(image) {
+  if (!image) return;
+  const card = image.closest('.guest-photo-card');
+  if (!card) return;
+
+  const markLoaded = () => {
+    card.classList.remove('is-loading');
+    image.classList.add('is-loaded');
+  };
+
+  if (image.complete && image.naturalWidth > 0) {
+    markLoaded();
+    return;
+  }
+
+  image.addEventListener('load', markLoaded, { once: true });
+}
+
 function renderGallery() {
   if (!galleryGrid) return;
   if (!items.length) {
@@ -206,7 +224,7 @@ function renderGallery() {
     .map((image, index) => {
       const variant = getMosaicVariantClass(index);
       return `
-      <figure class="guest-photo-card ${variant}" data-photo-index="${index}">
+      <figure class="guest-photo-card ${variant} is-loading" data-photo-index="${index}">
         <img src="${image.url}" alt="Foto di ${escapeHtml(image.author)}" loading="lazy" />
         <figcaption class="guest-photo-author">${escapeHtml(image.author)}</figcaption>
       </figure>
@@ -215,6 +233,7 @@ function renderGallery() {
     .join('');
 
   galleryGrid.querySelectorAll('.guest-photo-card img').forEach((img) => {
+    bindCardImageLoadingState(img);
     img.addEventListener(
       'error',
       () => {

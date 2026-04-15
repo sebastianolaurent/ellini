@@ -24,6 +24,10 @@ const MIN_GUEST_PHOTO_DIMENSION = 960;
 const HOME_GUEST_GALLERY_MAX_ITEMS = 6;
 const GUEST_AUTHOR_STORAGE_KEY = 'weddingGuestAuthorName';
 const DEFAULT_GUEST_AUTHOR = 'Invitato';
+const SUPABASE_CDN_URL = 'assets/vendor/supabase-js.js';
+const MAPKIT_CDN_URL = 'https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js';
+const MAPLIBRE_JS_CDN_URL = 'assets/vendor/maplibre-gl.js';
+const MAPLIBRE_CSS_CDN_URL = 'assets/vendor/maplibre-gl.css';
 const REDUCED_MOTION_QUERY = window.matchMedia('(prefers-reduced-motion: reduce)');
 const darkSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
 let mapInstances = [];
@@ -37,9 +41,67 @@ let cachedGuestAuthorName = '';
 let mapTargets = [];
 let revealObserver = null;
 let parallaxListenerAttached = false;
+let parallaxRafId = 0;
+let mapsInitialized = false;
+let galleryInitialized = false;
+let mapLibreCssInjected = false;
+const externalScriptPromises = new Map();
 
 function isReducedMotionPreferred() {
   return REDUCED_MOTION_QUERY.matches;
+}
+
+function loadExternalScript(src, attributes = {}) {
+  if (!src) return Promise.reject(new Error('URL script non valida'));
+  if (externalScriptPromises.has(src)) {
+    return externalScriptPromises.get(src);
+  }
+
+  const promise = new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-external-src="${src}"]`);
+    if (existing && existing.dataset.loaded === 'true') {
+      resolve();
+      return;
+    }
+
+    const script = existing || document.createElement('script');
+    script.src = src;
+    script.async = true;
+    script.dataset.externalSrc = src;
+    if (attributes.crossorigin) {
+      script.setAttribute('crossorigin', attributes.crossorigin);
+    }
+
+    script.onload = () => {
+      script.dataset.loaded = 'true';
+      resolve();
+    };
+    script.onerror = () => reject(new Error(`Caricamento script fallito: ${src}`));
+
+    if (!existing) {
+      document.head.appendChild(script);
+    }
+  });
+
+  externalScriptPromises.set(src, promise);
+  return promise;
+}
+
+function ensureMapLibreCss() {
+  if (mapLibreCssInjected) return;
+  const existing = document.querySelector(`link[data-external-css="${MAPLIBRE_CSS_CDN_URL}"]`);
+  if (existing) {
+    mapLibreCssInjected = true;
+    return;
+  }
+
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = MAPLIBRE_CSS_CDN_URL;
+  link.setAttribute('crossorigin', '');
+  link.dataset.externalCss = MAPLIBRE_CSS_CDN_URL;
+  document.head.appendChild(link);
+  mapLibreCssInjected = true;
 }
 
 function isAppleDevice() {
@@ -92,6 +154,30 @@ function applyHeroParallax() {
   heroPhoto.style.transform = `scale(1.04) translate3d(0, ${offset}px, 0)`;
 }
 
+function scheduleHeroParallax() {
+  if (parallaxRafId) return;
+  parallaxRafId = requestAnimationFrame(() => {
+    parallaxRafId = 0;
+    applyHeroParallax();
+  });
+}
+
+function attachParallaxListener() {
+  if (parallaxListenerAttached || isReducedMotionPreferred()) return;
+  window.addEventListener('scroll', scheduleHeroParallax, { passive: true });
+  parallaxListenerAttached = true;
+}
+
+function detachParallaxListener() {
+  if (!parallaxListenerAttached) return;
+  window.removeEventListener('scroll', scheduleHeroParallax);
+  parallaxListenerAttached = false;
+  if (parallaxRafId) {
+    cancelAnimationFrame(parallaxRafId);
+    parallaxRafId = 0;
+  }
+}
+
 function markHeroReady() {
   requestAnimationFrame(() => {
     document.body.classList.add('page-ready');
@@ -133,9 +219,10 @@ function revealWithObserver(nodeList) {
 }
 
 function initScrollReveals() {
-  const sectionHeads = document.querySelectorAll('.section-head, .gift-box, .footer .container');
+  const sectionHeads = document.querySelectorAll('.section-head, .gift-box');
   const infoCards = document.querySelectorAll('.info-card');
   const galleryBlocks = document.querySelectorAll('.guest-gallery-copy, .guest-gallery-grid, .guest-gallery-actions');
+  const footerContainer = document.querySelector('.footer .container');
 
   revealWithObserver(sectionHeads);
   revealWithObserver(galleryBlocks);
@@ -143,31 +230,53 @@ function initScrollReveals() {
     card.dataset.reveal = index % 2 === 0 ? 'left' : 'right';
   });
   revealWithObserver(infoCards);
+
+  // Keep footer always visible and never gated by scroll reveal.
+  if (footerContainer) {
+    footerContainer.classList.remove('reveal-item');
+    footerContainer.classList.add('is-visible');
+  }
 }
 
 function applyTiltEffect(elements) {
   if (!elements?.length || isReducedMotionPreferred()) return;
-  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
   elements.forEach((el) => {
     if (!(el instanceof HTMLElement) || el.dataset.tiltReady === 'true') return;
     el.dataset.tiltReady = 'true';
+    let rafId = 0;
+    let lastPointerEvent = null;
 
-    const onMove = (event) => {
+    const drawTilt = () => {
+      rafId = 0;
+      if (!lastPointerEvent) return;
       const rect = el.getBoundingClientRect();
-      const px = (event.clientX - rect.left) / rect.width;
-      const py = (event.clientY - rect.top) / rect.height;
+      const px = (lastPointerEvent.clientX - rect.left) / rect.width;
+      const py = (lastPointerEvent.clientY - rect.top) / rect.height;
       const rotateY = (px - 0.5) * 6;
       const rotateX = (0.5 - py) * 5;
       el.style.transform = `translateY(-4px) perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
     };
 
+    const onMove = (event) => {
+      lastPointerEvent = event;
+      if (!rafId) {
+        rafId = requestAnimationFrame(drawTilt);
+      }
+    };
+
     const onLeave = () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+      lastPointerEvent = null;
       el.style.transform = '';
     };
 
-    el.addEventListener('mousemove', onMove);
-    el.addEventListener('mouseleave', onLeave);
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerleave', onLeave);
   });
 }
 
@@ -176,10 +285,7 @@ function initInteractiveMotion() {
   initScrollReveals();
   applyTiltEffect(document.querySelectorAll('.info-card, .gift-box'));
   applyHeroParallax();
-  if (!parallaxListenerAttached) {
-    window.addEventListener('scroll', applyHeroParallax, { passive: true });
-    parallaxListenerAttached = true;
-  }
+  attachParallaxListener();
 }
 
 function parseJwtPayload(token) {
@@ -370,8 +476,11 @@ function initMapLibreMap() {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
     const popup = new maplibregl.Popup({ offset: 20 }).setText(target.pinTitle);
+    const markerElement = document.createElement('div');
+    markerElement.className = 'program-map-marker';
+    markerElement.setAttribute('aria-hidden', 'true');
 
-    new maplibregl.Marker({ color: '#b99be4' })
+    new maplibregl.Marker({ element: markerElement })
       .setLngLat([target.lon, target.lat])
       .setPopup(popup)
       .addTo(map);
@@ -730,6 +839,24 @@ function showNextLightboxImage(direction) {
   openLightbox(currentLightboxIndex + direction);
 }
 
+function bindCardImageLoadingState(image) {
+  if (!image) return;
+  const card = image.closest('.guest-photo-card');
+  if (!card) return;
+
+  const markLoaded = () => {
+    card.classList.remove('is-loading');
+    image.classList.add('is-loaded');
+  };
+
+  if (image.complete && image.naturalWidth > 0) {
+    markLoaded();
+    return;
+  }
+
+  image.addEventListener('load', markLoaded, { once: true });
+}
+
 function renderGuestGallery(images) {
   if (!guestGallery) return;
 
@@ -750,7 +877,7 @@ function renderGuestGallery(images) {
     .map((image, index) => {
       const variantClass = getMosaicVariantClass(index);
       return `
-      <figure class="guest-photo-card ${variantClass}" data-photo-name="${image.name}" data-photo-index="${index}">
+      <figure class="guest-photo-card ${variantClass} is-loading" data-photo-name="${image.name}" data-photo-index="${index}">
         <img src="${image.url}" alt="Foto di ${escapeHtml(image.author)}" loading="lazy" />
         <figcaption class="guest-photo-author">${escapeHtml(image.author)}</figcaption>
       </figure>
@@ -759,10 +886,10 @@ function renderGuestGallery(images) {
     .join('');
 
   guestGallery.querySelectorAll('.guest-photo-card img').forEach((img) => {
+    bindCardImageLoadingState(img);
     img.addEventListener('error', handleGuestImageLoadError, { once: true });
   });
 
-  applyTiltEffect(guestGallery.querySelectorAll('.guest-photo-card'));
   revealWithObserver(guestGallery.querySelectorAll('.guest-photo-card'));
 }
 
@@ -869,8 +996,22 @@ async function uploadGuestPhotos(files, authorName) {
   setGuestUploaderState(true);
 }
 
-function initGuestGallery() {
+async function initGuestGallery() {
+  if (galleryInitialized) return;
+  galleryInitialized = true;
   if (!guestUploadInput || !guestUploadTrigger || !guestGallery) return;
+
+  if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+    try {
+      await loadExternalScript(SUPABASE_CDN_URL);
+    } catch (_) {
+      setUploadStatus('Upload non disponibile: libreria Supabase non caricata.');
+      setGuestUploaderState(false);
+      renderGuestGalleryEmpty('Caricamento non disponibile al momento.');
+      return;
+    }
+  }
+
   if (!window.supabase || typeof window.supabase.createClient !== 'function') {
     setUploadStatus('Upload non disponibile: libreria Supabase non caricata.');
     setGuestUploaderState(false);
@@ -1012,6 +1153,79 @@ function initAppleMap() {
   }
 }
 
+async function initProgramMaps() {
+  if (mapsInitialized) return;
+  mapsInitialized = true;
+
+  if (window.MAPKIT_JWT) {
+    try {
+      await loadExternalScript(MAPKIT_CDN_URL, { crossorigin: 'anonymous' });
+    } catch (_) {
+      // Ignore and continue with MapLibre fallback.
+    }
+  }
+
+  if (!initAppleMap()) {
+    usesAppleMap = false;
+    ensureMapLibreCss();
+    if (typeof maplibregl === 'undefined') {
+      try {
+        await loadExternalScript(MAPLIBRE_JS_CDN_URL, { crossorigin: 'anonymous' });
+      } catch (_) {
+        initMapLibreMap();
+        return;
+      }
+    }
+    initMapLibreMap();
+  } else {
+    usesAppleMap = true;
+  }
+}
+
+function initDeferredSections() {
+  const detailsSection = document.getElementById('dettagli');
+  const gallerySection = document.getElementById('foto-invitati');
+  const canObserve = typeof IntersectionObserver !== 'undefined';
+
+  if (!canObserve) {
+    initProgramMaps();
+    initGuestGallery();
+    return;
+  }
+
+  if (detailsSection) {
+    const mapObserver = new IntersectionObserver(
+      (entries, observer) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          void initProgramMaps();
+          observer.disconnect();
+        });
+      },
+      { rootMargin: '380px 0px 220px 0px', threshold: 0.01 }
+    );
+    mapObserver.observe(detailsSection);
+  } else {
+    void initProgramMaps();
+  }
+
+  if (gallerySection) {
+    const galleryObserver = new IntersectionObserver(
+      (entries, observer) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          void initGuestGallery();
+          observer.disconnect();
+        });
+      },
+      { rootMargin: '420px 0px 260px 0px', threshold: 0.01 }
+    );
+    galleryObserver.observe(gallerySection);
+  } else {
+    void initGuestGallery();
+  }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   setHeroPhotoForTheme();
   initInteractiveMotion();
@@ -1021,30 +1235,25 @@ window.addEventListener('DOMContentLoaded', () => {
   hydrateMapLinks();
   initMapLinkClicks();
   mapTargets = getMapTargets();
-  initGuestGallery();
-  if (!initAppleMap()) {
-    usesAppleMap = false;
-    initMapLibreMap();
-  } else {
-    usesAppleMap = true;
-  }
+  initDeferredSections();
 });
 
 if (typeof darkSchemeQuery.addEventListener === 'function') {
   darkSchemeQuery.addEventListener('change', () => {
     setHeroPhotoForTheme();
-    if (!usesAppleMap) initMapLibreMap();
+    if (mapsInitialized && !usesAppleMap) initMapLibreMap();
   });
 } else if (typeof darkSchemeQuery.addListener === 'function') {
   darkSchemeQuery.addListener(() => {
     setHeroPhotoForTheme();
-    if (!usesAppleMap) initMapLibreMap();
+    if (mapsInitialized && !usesAppleMap) initMapLibreMap();
   });
 }
 
 if (typeof REDUCED_MOTION_QUERY.addEventListener === 'function') {
   REDUCED_MOTION_QUERY.addEventListener('change', () => {
     if (isReducedMotionPreferred()) {
+      detachParallaxListener();
       document.querySelectorAll('.reveal-item').forEach((node) => {
         node.classList.add('is-visible');
       });

@@ -5,22 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#e0d3f3" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1b1724" />
-    <title>Eleonora & Luca | Matrimonio</title>
+    <title>Matrimonio Eleonora e Luca</title>
     <meta
       name="description"
       content="Invito al matrimonio di Eleonora Ortenzi e Luca Porro: programma, logistica, mappa e informazioni regalo."
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
-      crossorigin=""
-    />
+    <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/fonts/fonts.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -31,6 +22,10 @@
         src="assets/images/hero-light.webp"
         alt="Eleonora e Luca"
         loading="eager"
+        fetchpriority="high"
+        decoding="async"
+        width="1200"
+        height="672"
       />
       <div class="hero-content container">
         <p class="eyebrow hero-line">Siete invitati</p>
@@ -194,8 +189,8 @@
           </div>
 
           <p class="guest-gallery-copy">
-            Rubiamo i ricordi migliori alla giornata: carica qui i tuoi scatti pazzi, teneri o
-            perfettamente fuori fuoco.
+            Condividi i momenti più divertenti, spontanei e (sì) anche un po' imbarazzanti della festa:
+            sorrisi, amici e scene epiche da ricordare!
           </p>
 
           <input
@@ -205,6 +200,7 @@
             accept="image/*"
             multiple
           />
+          <label class="visually-hidden" for="guest-photos">Carica foto invitati</label>
           <p class="upload-status" id="upload-status" role="status" aria-live="polite"></p>
 
           <div class="guest-gallery-grid is-empty" id="guest-gallery" aria-live="polite">
@@ -240,7 +236,7 @@
                 tabindex="0"
                 aria-label="Copia IBAN"
               >
-                IT50K0306909504100000013409
+                IT64N0306909504100000063522
               </p>
               <p class="copy-feedback" id="copy-feedback" role="status" aria-live="polite"></p>
             </div>
@@ -302,9 +298,6 @@
     </footer>
 
     <script src="config.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js" crossorigin></script>
-    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" crossorigin=""></script>
     <script src="script.js"></script>
 
     <!--
