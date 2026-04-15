@@ -44,6 +44,10 @@ img {
 .container {
   width: min(1120px, 92%);
   margin: 0 auto;
+  padding-left: constant(safe-area-inset-left);
+  padding-right: constant(safe-area-inset-right);
+  padding-left: max(0px, env(safe-area-inset-left));
+  padding-right: max(0px, env(safe-area-inset-right));
 }
 
 .section {
