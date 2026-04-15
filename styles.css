@@ -60,7 +60,7 @@ img {
 h1,
 h2,
 h3 {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "EB Garamond", serif;
   line-height: 1.1;
   margin: 0;
   color: var(--accent-dark);
@@ -173,7 +173,11 @@ p {
   z-index: 2;
   color: #fffdf8;
   text-align: center;
-  text-shadow: 0 2px 16px rgba(34, 21, 54, 0.45);
+}
+
+.hero-content h1 {
+  -webkit-text-stroke: 1px rgba(34, 21, 54, 0.6);
+  text-stroke: 1px rgba(34, 21, 54, 0.6);
 }
 
 .hero-content h1 {
@@ -506,7 +510,7 @@ p {
 .guest-gallery-empty strong {
   display: block;
   color: var(--accent-dark);
-  font-family: "Cormorant Garamond", serif;
+  font-family: "EB Garamond", serif;
   font-size: 1.35rem;
   margin-bottom: 0.3rem;
 }
@@ -697,13 +701,16 @@ body.author-modal-open {
 }
 
 .iban {
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(1.2rem, 2.4vw, 1.7rem);
+  font-family: "EB Garamond", serif;
+  font-size: clamp(1.1rem, 2.1vw, 1.45rem);
   font-weight: 600;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
   white-space: nowrap;
   word-break: normal;
   overflow-wrap: normal;
-  color: #b88ef2;
+  color: var(--accent-dark);
 }
 
 .iban-copy {
@@ -772,7 +779,7 @@ body.author-modal-open {
 }
 
 .footer p:first-child {
-  font-family: "Cormorant Garamond", serif;
+  font-family: "EB Garamond", serif;
   font-size: clamp(1.25rem, 2.2vw, 1.6rem);
   font-weight: 600;
   font-style: italic;
@@ -881,6 +888,11 @@ body.author-modal-open {
   .hero-content .eyebrow {
     background: rgba(14, 10, 22, 0.68);
     border-color: rgba(206, 181, 241, 0.58);
+  }
+
+  .hero-content h1 {
+    -webkit-text-stroke: 1px rgba(10, 7, 16, 0.78);
+    text-stroke: 1px rgba(10, 7, 16, 0.78);
   }
 
   .program-map-preview {
