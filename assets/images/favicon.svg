@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Eleonora e Luca">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d8b5ff" />
+      <stop offset="100%" stop-color="#9a79c6" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#2a2238" />
+  <path
+    d="M32 50c-8.6-5.5-17-11.8-17-21 0-5.6 4.1-10 9.7-10 3.1 0 5.9 1.5 7.3 4 1.4-2.5 4.2-4 7.3-4 5.6 0 9.7 4.4 9.7 10 0 9.2-8.4 15.5-17 21Z"
+    fill="url(#g)"
+  />
+</svg>
