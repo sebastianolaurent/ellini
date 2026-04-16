@@ -1090,6 +1090,10 @@ body.author-modal-open {
 
 .easter-egg-target {
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .easter-egg-target:focus-visible {
