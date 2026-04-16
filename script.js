@@ -30,6 +30,16 @@ const MAPLIBRE_CSS_CDN_URL = 'assets/vendor/maplibre-gl.css';
 const DETAILS_AUTO_REFRESH_MS = 15 * 60 * 1000;
 const REDUCED_MOTION_QUERY = window.matchMedia('(prefers-reduced-motion: reduce)');
 const darkSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+const EASTER_SECRET_WORD = 'amore';
+const EASTER_TAP_TARGET = 5;
+const EASTER_TAP_RESET_MS = 1300;
+const EASTER_TOAST_DURATION_MS = 6200;
+const EASTER_MESSAGES = [
+  'Hai trovato il brindisi segreto: applauso agli sposi e poi tutti in pista.',
+  'Missione compiuta: sorrisi +10, passi di danza +20.',
+  'Codice amore accettato. Prossima mossa: selfie di gruppo davanti alla torta.',
+  'Livello festa sbloccato: chi intercetta il bouquet offre il primo caffe.'
+];
 const DEFAULT_WEDDING_EVENT_CONFIG = {
   timezone: 'Europe/Rome',
   weddingDate: '2026-09-26',
@@ -53,6 +63,10 @@ let parallaxRafId = 0;
 let mapsInitialized = false;
 let galleryInitialized = false;
 let mapLibreCssInjected = false;
+let easterTapCount = 0;
+let easterTapTimer = 0;
+let easterDismissTimer = 0;
+let easterKeyBuffer = '';
 const externalScriptPromises = new Map();
 const weddingEventConfig = getWeddingEventConfig();
 const previewDateOverride = getPreviewDateFromUrl();
@@ -382,6 +396,144 @@ function initInteractiveMotion() {
   applyTiltEffect(document.querySelectorAll('.info-card, .gift-box'));
   applyHeroParallax();
   attachParallaxListener();
+}
+
+function getRandomItem(list) {
+  if (!Array.isArray(list) || !list.length) return '';
+  const index = Math.floor(Math.random() * list.length);
+  return list[index];
+}
+
+function isTypingIntoField(element) {
+  if (!(element instanceof HTMLElement)) return false;
+  const tagName = element.tagName;
+  return (
+    tagName === 'INPUT' ||
+    tagName === 'TEXTAREA' ||
+    tagName === 'SELECT' ||
+    element.isContentEditable
+  );
+}
+
+function clearHomepageEasterEgg() {
+  const toast = document.getElementById('home-easter-toast');
+  const confettiLayer = document.getElementById('home-easter-confetti');
+  if (toast) toast.remove();
+  if (confettiLayer) confettiLayer.remove();
+  document.body.classList.remove('easter-egg-active');
+}
+
+function dismissHomepageEasterEgg() {
+  window.clearTimeout(easterDismissTimer);
+  easterDismissTimer = 0;
+  clearHomepageEasterEgg();
+}
+
+function createHomepageEasterConfetti(layer) {
+  const confettiColors = ['#f9d66d', '#9a79c6', '#f88fab', '#76c7ff', '#fff6a2', '#fca974'];
+  for (let index = 0; index < 28; index += 1) {
+    const piece = document.createElement('span');
+    piece.className = 'easter-confetti-piece';
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.setProperty('--piece-size', `${Math.round(Math.random() * 8 + 6)}px`);
+    piece.style.setProperty('--piece-color', getRandomItem(confettiColors));
+    piece.style.setProperty('--drift', `${Math.round((Math.random() * 2 - 1) * 18)}vw`);
+    piece.style.setProperty('--fall-duration', `${(Math.random() * 1.5 + 2.6).toFixed(2)}s`);
+    piece.style.setProperty('--fall-delay', `${(Math.random() * 0.45).toFixed(2)}s`);
+    piece.style.setProperty('--piece-rotate', `${Math.round(Math.random() * 320 + 40)}deg`);
+    layer.appendChild(piece);
+  }
+}
+
+function launchHomepageEasterEgg() {
+  dismissHomepageEasterEgg();
+  document.body.classList.add('easter-egg-active');
+
+  const toast = document.createElement('aside');
+  toast.id = 'home-easter-toast';
+  toast.className = 'easter-egg-toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+
+  const title = document.createElement('strong');
+  title.textContent = 'Brindisi segreto sbloccato';
+
+  const copy = document.createElement('p');
+  copy.textContent = getRandomItem(EASTER_MESSAGES);
+
+  const closeButton = document.createElement('button');
+  closeButton.type = 'button';
+  closeButton.className = 'easter-egg-dismiss';
+  closeButton.textContent = 'chiudi';
+  closeButton.setAttribute('aria-label', 'Chiudi easter egg');
+  closeButton.addEventListener('click', dismissHomepageEasterEgg);
+
+  toast.append(title, copy, closeButton);
+  document.body.appendChild(toast);
+
+  if (!isReducedMotionPreferred()) {
+    const confettiLayer = document.createElement('div');
+    confettiLayer.id = 'home-easter-confetti';
+    confettiLayer.className = 'easter-confetti-layer';
+    confettiLayer.setAttribute('aria-hidden', 'true');
+    createHomepageEasterConfetti(confettiLayer);
+    document.body.appendChild(confettiLayer);
+  }
+
+  requestAnimationFrame(() => {
+    toast.classList.add('is-visible');
+  });
+
+  easterDismissTimer = window.setTimeout(() => {
+    dismissHomepageEasterEgg();
+  }, EASTER_TOAST_DURATION_MS);
+}
+
+function registerHomepageEasterTap() {
+  easterTapCount += 1;
+  window.clearTimeout(easterTapTimer);
+  easterTapTimer = window.setTimeout(() => {
+    easterTapCount = 0;
+  }, EASTER_TAP_RESET_MS);
+
+  if (easterTapCount >= EASTER_TAP_TARGET) {
+    easterTapCount = 0;
+    launchHomepageEasterEgg();
+  }
+}
+
+function initHomepageEasterEgg() {
+  const secretTargets = [
+    document.querySelector('.hero-content h1 span'),
+    document.querySelector('.footer p:first-child')
+  ].filter((node) => node instanceof HTMLElement);
+  if (!secretTargets.length) return;
+
+  secretTargets.forEach((target) => {
+    if (!(target instanceof HTMLElement)) return;
+    target.classList.add('easter-egg-target');
+    if (!target.hasAttribute('tabindex')) {
+      target.setAttribute('tabindex', '0');
+    }
+    target.addEventListener('click', registerHomepageEasterTap);
+    target.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      registerHomepageEasterTap();
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (isTypingIntoField(document.activeElement)) return;
+    const key = String(event.key || '').toLowerCase();
+    if (!/^[a-z]$/.test(key)) return;
+    easterKeyBuffer = `${easterKeyBuffer}${key}`.slice(-EASTER_SECRET_WORD.length);
+    if (easterKeyBuffer === EASTER_SECRET_WORD) {
+      easterKeyBuffer = '';
+      launchHomepageEasterEgg();
+    }
+  });
 }
 
 function parseJwtPayload(token) {
@@ -1331,6 +1483,7 @@ window.addEventListener('DOMContentLoaded', () => {
   applyGalleryAvailabilityRules();
   setHeroPhotoForTheme();
   initInteractiveMotion();
+  initHomepageEasterEgg();
   initProgramCalendarCta();
   initIbanDisplay();
   initIbanCopy();
