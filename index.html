@@ -76,25 +76,13 @@
               <p class="value">
                 <a
                   class="place-link js-map-link"
-                  href="https://maps.apple.com/?q=Comune%20di%20Bobbio%20Piazza%20Santa%20Chiara%201%2029022%20Bobbio%20PC"
-                  data-lat="44.76889"
-                  data-lon="9.38611"
-                  data-label="Comune di Bobbio Piazza S Chiara 1 29022 Bobbio PC"
+                  href="https://maps.apple.com/?q=Piazza%20S%20Chiara%2C%201%2C%2029022%20Bobbio%20PC"
+                  data-label="Piazza S Chiara, 1, 29022 Bobbio PC"
                   target="_blank"
                   rel="noopener noreferrer"
-                  >Comune di Bobbio</a
-                >
-              </p>
-              <p class="address">
-                <a
-                  class="place-link js-map-link"
-                  href="https://maps.apple.com/?q=Comune%20di%20Bobbio%20Piazza%20Santa%20Chiara%201%2029022%20Bobbio%20PC"
-                  data-lat="44.76889"
-                  data-lon="9.38611"
-                  data-label="Comune di Bobbio Piazza S Chiara 1 29022 Bobbio PC"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >Piazza S Chiara, 1, 29022 Bobbio PC</a
+                  >Comune di Bobbio<br /><span class="address"
+                    >Piazza S Chiara, 1, 29022 Bobbio PC</span
+                  ></a
                 >
               </p>
               <div class="program-map-preview" aria-label="Mappa cerimonia">
@@ -104,7 +92,7 @@
                   data-lat="44.76889"
                   data-lon="9.38611"
                   data-pin-title="Cerimonia"
-                  data-label="Comune di Bobbio Piazza S Chiara 1 29022 Bobbio PC"
+                  data-label="Piazza S Chiara, 1, 29022 Bobbio PC"
                   role="region"
                   aria-label="Mappa location cerimonia"
                 ></div>
@@ -127,19 +115,9 @@
                   data-label="Agriturismo Il Torrione del Trebbia Località Morina 1 29022 Bobbio PC"
                   target="_blank"
                   rel="noopener noreferrer"
-                  >Agriturismo Il Torrione del Trebbia</a
-                >
-              </p>
-              <p class="address">
-                <a
-                  class="place-link js-map-link"
-                  href="https://maps.apple.com/?q=Agriturismo%20Il%20Torrione%20del%20Trebbia%20Localita%20Morina%201%2029022%20Bobbio%20PC"
-                  data-lat="44.76504"
-                  data-lon="9.39456"
-                  data-label="Agriturismo Il Torrione del Trebbia Località Morina 1 29022 Bobbio PC"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >Località Morina, 1, 29022 Bobbio PC</a
+                  >Agriturismo Il Torrione del Trebbia<br /><span class="address"
+                    >Località Morina, 1, 29022 Bobbio PC</span
+                  ></a
                 >
               </p>
               <div class="program-map-preview" aria-label="Mappa ricevimento">
@@ -183,7 +161,7 @@
               <p class="eyebrow">I vostri scatti</p>
               <h2>Galleria degli invitati</h2>
             </div>
-            <button class="btn btn-primary" id="guest-upload-trigger" type="button">
+            <button class="btn btn-primary" id="guest-upload-trigger" type="button" hidden>
               Aggiungi foto
             </button>
           </div>
@@ -192,6 +170,11 @@
             Condividi i momenti più divertenti, spontanei e (sì) anche un po' imbarazzanti della festa:
             sorrisi, amici e scene epiche da ricordare!
           </p>
+
+          <div class="guest-gallery-empty guest-gallery-teaser" id="guest-gallery-teaser" hidden>
+            <strong>Album in arrivo</strong>
+            Dal 24 al 29 settembre 2026 si aprirà la condivisione live delle foto.
+          </div>
 
           <input
             id="guest-photos"
@@ -203,16 +186,13 @@
           <label class="visually-hidden" for="guest-photos">Carica foto invitati</label>
           <p class="upload-status" id="upload-status" role="status" aria-live="polite"></p>
 
-          <div class="guest-gallery-grid is-empty" id="guest-gallery" aria-live="polite">
-            <div class="guest-gallery-empty">
-              <strong>Album ancora vuoto</strong>
-              Nessun problema: appena arriva la prima foto, qui parte la festa.
+          <div class="guest-gallery-live" id="guest-gallery-live">
+            <div class="guest-gallery-grid is-empty" id="guest-gallery" aria-live="polite">
+              <div class="guest-gallery-empty">
+                <strong>Ci siamo quasi</strong>
+                Carico le ultime foto condivise...
+              </div>
             </div>
-          </div>
-          <div class="guest-gallery-actions">
-            <a class="btn btn-secondary" id="view-all-photos" href="gallery.html" hidden>
-              Vedi tutte le foto
-            </a>
           </div>
         </div>
       </section>

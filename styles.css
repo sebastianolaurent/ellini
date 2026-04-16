@@ -451,8 +451,9 @@ body.page-ready .hero-line:nth-child(5) {
 }
 
 .address {
-  margin-top: 0;
+  display: inline-block;
   color: var(--muted);
+  font-weight: 400;
 }
 
 .place-link {
@@ -529,6 +530,14 @@ body.page-ready .hero-line:nth-child(5) {
 .guest-gallery-copy {
   color: var(--muted);
   max-width: 60ch;
+}
+
+.guest-gallery-live {
+  margin-top: 0.95rem;
+}
+
+.guest-gallery-empty.guest-gallery-teaser {
+  margin: 1.2rem 0 0.6rem;
 }
 
 .guest-gallery-topline {
@@ -778,12 +787,6 @@ body.page-ready .hero-line:nth-child(5) {
   font-family: "EB Garamond", serif;
   font-size: 1.35rem;
   margin-bottom: 0.18rem;
-}
-
-.guest-gallery-actions {
-  margin-top: 0.8rem;
-  display: flex;
-  justify-content: center;
 }
 
 .gallery-sentinel {

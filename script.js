@@ -5,7 +5,6 @@ const guestUploadTrigger = document.getElementById('guest-upload-trigger');
 const guestUploadInput = document.getElementById('guest-photos');
 const guestUploadStatus = document.getElementById('upload-status');
 const guestGallery = document.getElementById('guest-gallery');
-const viewAllPhotosButton = document.getElementById('view-all-photos');
 const photoLightbox = document.getElementById('photo-lightbox');
 const lightboxImage = document.getElementById('lightbox-image');
 const lightboxCloseButton = document.getElementById('lightbox-close');
@@ -28,8 +27,17 @@ const SUPABASE_CDN_URL = 'assets/vendor/supabase-js.js';
 const MAPKIT_CDN_URL = 'https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js';
 const MAPLIBRE_JS_CDN_URL = 'assets/vendor/maplibre-gl.js';
 const MAPLIBRE_CSS_CDN_URL = 'assets/vendor/maplibre-gl.css';
+const DETAILS_AUTO_REFRESH_MS = 15 * 60 * 1000;
 const REDUCED_MOTION_QUERY = window.matchMedia('(prefers-reduced-motion: reduce)');
 const darkSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+const DEFAULT_WEDDING_EVENT_CONFIG = {
+  timezone: 'Europe/Rome',
+  weddingDate: '2026-09-26',
+  galleryWindow: {
+    startDate: '2026-09-24',
+    endDate: '2026-09-29'
+  }
+};
 let mapInstances = [];
 let usesAppleMap = false;
 let supabaseClient = null;
@@ -46,6 +54,92 @@ let mapsInitialized = false;
 let galleryInitialized = false;
 let mapLibreCssInjected = false;
 const externalScriptPromises = new Map();
+const weddingEventConfig = getWeddingEventConfig();
+const previewDateOverride = getPreviewDateFromUrl();
+
+function getWeddingEventConfig() {
+  const rawConfig = window.WEDDING_EVENT_CONFIG || {};
+  const rawGalleryWindow = rawConfig.galleryWindow || {};
+
+  return {
+    timezone: String(rawConfig.timezone || DEFAULT_WEDDING_EVENT_CONFIG.timezone),
+    weddingDate: String(rawConfig.weddingDate || DEFAULT_WEDDING_EVENT_CONFIG.weddingDate),
+    galleryWindow: {
+      startDate: String(rawGalleryWindow.startDate || DEFAULT_WEDDING_EVENT_CONFIG.galleryWindow.startDate),
+      endDate: String(rawGalleryWindow.endDate || DEFAULT_WEDDING_EVENT_CONFIG.galleryWindow.endDate)
+    }
+  };
+}
+
+function getDateStampInTimeZone(timeZone, date = new Date()) {
+  try {
+    const parts = new Intl.DateTimeFormat('en', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(date);
+    const year = parts.find((part) => part.type === 'year')?.value;
+    const month = parts.find((part) => part.type === 'month')?.value;
+    const day = parts.find((part) => part.type === 'day')?.value;
+    if (year && month && day) return `${year}-${month}-${day}`;
+  } catch (_) {
+    // Fall through to local date fallback.
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getPreviewDateFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search || '');
+    const candidate =
+      params.get('pd') || params.get('previewDate') || params.get('preview-date') || '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(candidate)) return candidate;
+  } catch (_) {
+    // Ignore URL parsing errors in legacy environments.
+  }
+  return '';
+}
+
+function getWeddingPhase(date = new Date()) {
+  const todayInRome = previewDateOverride || getDateStampInTimeZone(weddingEventConfig.timezone, date);
+  const { startDate, endDate } = weddingEventConfig.galleryWindow;
+  if (todayInRome < startDate) return 'pre';
+  if (todayInRome > endDate) return 'post';
+  return 'event';
+}
+
+function isGalleryWindowOpen(date = new Date()) {
+  return getWeddingPhase(date) === 'event';
+}
+
+function applyGalleryAvailabilityRules() {
+  const gallerySection = document.getElementById('foto-invitati');
+  const galleryTeaser = document.getElementById('guest-gallery-teaser');
+  const galleryLive = document.getElementById('guest-gallery-live');
+  const phase = getWeddingPhase();
+  document.body.dataset.eventPhase = phase;
+  if (previewDateOverride) {
+    document.body.dataset.previewDate = previewDateOverride;
+  } else {
+    delete document.body.dataset.previewDate;
+  }
+  if (gallerySection) gallerySection.hidden = false;
+
+  const galleryOpen = phase === 'event';
+  const galleryVisible = phase !== 'pre';
+  if (galleryTeaser) galleryTeaser.hidden = phase !== 'pre';
+  if (galleryLive) galleryLive.hidden = !galleryVisible;
+  if (guestUploadTrigger) guestUploadTrigger.hidden = !galleryOpen;
+
+  setGuestUploaderState(galleryOpen);
+  if (guestUploadInput) guestUploadInput.disabled = !galleryOpen;
+  setUploadStatus('');
+}
 
 function isReducedMotionPreferred() {
   return REDUCED_MOTION_QUERY.matches;
@@ -221,7 +315,9 @@ function revealWithObserver(nodeList) {
 function initScrollReveals() {
   const sectionHeads = document.querySelectorAll('.section-head, .gift-box');
   const infoCards = document.querySelectorAll('.info-card');
-  const galleryBlocks = document.querySelectorAll('.guest-gallery-copy, .guest-gallery-grid, .guest-gallery-actions');
+  const galleryBlocks = document.querySelectorAll(
+    '.guest-gallery-copy, .guest-gallery-teaser, .guest-gallery-grid'
+  );
   const footerContainer = document.querySelector('.footer .container');
 
   revealWithObserver(sectionHeads);
@@ -861,7 +957,6 @@ function renderGuestGallery(images) {
   if (!guestGallery) return;
 
   if (!images.length) {
-    if (viewAllPhotosButton) viewAllPhotosButton.hidden = true;
     guestGallery.classList.add('is-empty');
     guestGallery.innerHTML = `
       <div class="guest-gallery-empty">
@@ -895,7 +990,6 @@ function renderGuestGallery(images) {
 
 function renderGuestGalleryEmpty(message) {
   if (!guestGallery) return;
-  if (viewAllPhotosButton) viewAllPhotosButton.hidden = true;
   guestGallery.classList.add('is-empty');
   guestGallery.innerHTML = `
     <div class="guest-gallery-empty">
@@ -940,10 +1034,6 @@ async function loadGuestPhotos() {
   guestGalleryItems = pageItems
     .sort((a, b) => getImageSortKey(b) - getImageSortKey(a))
     .slice(0, HOME_GUEST_GALLERY_MAX_ITEMS);
-
-  if (viewAllPhotosButton) {
-    viewAllPhotosButton.hidden = pageItems.length <= HOME_GUEST_GALLERY_MAX_ITEMS;
-  }
 
   renderGuestGallery(guestGalleryItems);
 }
@@ -999,7 +1089,8 @@ async function uploadGuestPhotos(files, authorName) {
 async function initGuestGallery() {
   if (galleryInitialized) return;
   galleryInitialized = true;
-  if (!guestUploadInput || !guestUploadTrigger || !guestGallery) return;
+  if (!guestGallery) return;
+  const uploadControlsAvailable = Boolean(guestUploadInput && guestUploadTrigger);
 
   if (!window.supabase || typeof window.supabase.createClient !== 'function') {
     try {
@@ -1034,46 +1125,48 @@ async function initGuestGallery() {
     }
   });
 
-  guestUploadTrigger.addEventListener('click', async () => {
-    if (!guestUploadsEnabled) return;
-    const authorName = await ensureGuestAuthorName();
-    if (authorName === null) {
-      setUploadStatus('Upload annullato.');
-      return;
-    }
-    if (isGuestAuthorNameMissing(authorName)) {
-      setUploadStatus('Inserisci un nome prima di caricare le foto.');
-      return;
-    }
-    pendingGuestAuthorName = authorName;
-    guestUploadInput.click();
-  });
+  if (uploadControlsAvailable) {
+    guestUploadTrigger.addEventListener('click', async () => {
+      if (!guestUploadsEnabled) return;
+      const authorName = await ensureGuestAuthorName();
+      if (authorName === null) {
+        setUploadStatus('Upload annullato.');
+        return;
+      }
+      if (isGuestAuthorNameMissing(authorName)) {
+        setUploadStatus('Inserisci un nome prima di caricare le foto.');
+        return;
+      }
+      pendingGuestAuthorName = authorName;
+      guestUploadInput.click();
+    });
 
-  guestUploadInput.addEventListener('change', async (event) => {
-    const files = Array.from(event.target.files || []).filter((file) =>
-      (file.type || '').startsWith('image/')
-    );
-    if (!files.length) {
-      setUploadStatus('Seleziona almeno una foto valida.');
-      return;
-    }
-    const authorName = await resolveGuestAuthorName();
-    if (authorName === null) {
-      setUploadStatus('Upload annullato.');
+    guestUploadInput.addEventListener('change', async (event) => {
+      const files = Array.from(event.target.files || []).filter((file) =>
+        (file.type || '').startsWith('image/')
+      );
+      if (!files.length) {
+        setUploadStatus('Seleziona almeno una foto valida.');
+        return;
+      }
+      const authorName = await resolveGuestAuthorName();
+      if (authorName === null) {
+        setUploadStatus('Upload annullato.');
+        guestUploadInput.value = '';
+        pendingGuestAuthorName = '';
+        return;
+      }
+      if (isGuestAuthorNameMissing(authorName)) {
+        setUploadStatus('Inserisci un nome prima di caricare le foto.');
+        guestUploadInput.value = '';
+        pendingGuestAuthorName = '';
+        return;
+      }
+      await uploadGuestPhotos(files, authorName);
       guestUploadInput.value = '';
       pendingGuestAuthorName = '';
-      return;
-    }
-    if (isGuestAuthorNameMissing(authorName)) {
-      setUploadStatus('Inserisci un nome prima di caricare le foto.');
-      guestUploadInput.value = '';
-      pendingGuestAuthorName = '';
-      return;
-    }
-    await uploadGuestPhotos(files, authorName);
-    guestUploadInput.value = '';
-    pendingGuestAuthorName = '';
-  });
+    });
+  }
 
   guestGallery.addEventListener('click', (event) => {
     const card = event.target.closest('.guest-photo-card');
@@ -1105,7 +1198,7 @@ async function initGuestGallery() {
     });
   }
 
-  setGuestUploaderState(true);
+  setGuestUploaderState(uploadControlsAvailable && isGalleryWindowOpen());
   loadGuestPhotos();
 }
 
@@ -1186,10 +1279,11 @@ function initDeferredSections() {
   const detailsSection = document.getElementById('dettagli');
   const gallerySection = document.getElementById('foto-invitati');
   const canObserve = typeof IntersectionObserver !== 'undefined';
+  const galleryVisible = getWeddingPhase() !== 'pre';
 
   if (!canObserve) {
     initProgramMaps();
-    initGuestGallery();
+    if (galleryVisible) initGuestGallery();
     return;
   }
 
@@ -1209,7 +1303,7 @@ function initDeferredSections() {
     void initProgramMaps();
   }
 
-  if (gallerySection) {
+  if (gallerySection && galleryVisible) {
     const galleryObserver = new IntersectionObserver(
       (entries, observer) => {
         entries.forEach((entry) => {
@@ -1221,12 +1315,20 @@ function initDeferredSections() {
       { rootMargin: '420px 0px 260px 0px', threshold: 0.01 }
     );
     galleryObserver.observe(gallerySection);
-  } else {
+  } else if (galleryVisible) {
     void initGuestGallery();
   }
 }
 
+function initDetailsAutoRefresh() {
+  if (!document.getElementById('dettagli')) return;
+  window.setInterval(() => {
+    window.location.reload();
+  }, DETAILS_AUTO_REFRESH_MS);
+}
+
 window.addEventListener('DOMContentLoaded', () => {
+  applyGalleryAvailabilityRules();
   setHeroPhotoForTheme();
   initInteractiveMotion();
   initProgramCalendarCta();
@@ -1236,6 +1338,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initMapLinkClicks();
   mapTargets = getMapTargets();
   initDeferredSections();
+  initDetailsAutoRefresh();
 });
 
 if (typeof darkSchemeQuery.addEventListener === 'function') {
