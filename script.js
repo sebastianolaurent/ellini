@@ -212,30 +212,13 @@ function ensureMapLibreCss() {
   mapLibreCssInjected = true;
 }
 
-function isAppleDevice() {
-  const ua = navigator.userAgent || '';
-  const platform = navigator.platform || '';
-  const touchPoints = Number(navigator.maxTouchPoints || 0);
-  const isiPadDesktopUa = /Macintosh/i.test(ua) && touchPoints > 1;
-
-  return /iPhone|iPad|iPod/i.test(ua) || /Mac/i.test(platform) || isiPadDesktopUa;
-}
-
 function initProgramCalendarCta() {
   if (!programCalendarCta) return;
 
   programCalendarCta.textContent = 'Aggiungi al calendario';
   programCalendarCta.setAttribute('aria-label', 'Aggiungi al calendario');
-
-  const isApple = isAppleDevice();
-  if (isApple) {
-    programCalendarCta.setAttribute('href', 'assets/calendar/matrimonioeleonoraeluca.ics');
-    programCalendarCta.setAttribute('download', 'matrimonioeleonoraeluca.ics');
-    return;
-  }
-
-  programCalendarCta.setAttribute('href', 'assets/calendar/matrimonioeleonoraeluca-google.csv');
-  programCalendarCta.setAttribute('download', 'matrimonioeleonoraeluca-google.csv');
+  programCalendarCta.setAttribute('href', 'assets/calendar/matrimonioeleonoraeluca.ics');
+  programCalendarCta.setAttribute('download', 'matrimonioeleonoraeluca.ics');
 }
 
 function showMapMessage(container, message) {

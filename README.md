@@ -16,7 +16,7 @@ Landing page statica con invito, logistica evento, mappa, sezione regalo e galle
 - `gallery-page.js`: logica album completo + infinite scroll
 - `config.js`: configurazioni runtime (MapKit + Supabase)
 - `styles.css`: stile globale
-- `assets/`: immagini e file calendario (`.ics`, `.csv`)
+- `assets/`: immagini e file calendario (`.ics`)
 - `CNAME`: dominio custom GitHub Pages
 
 ## Riferimenti Ambiente
