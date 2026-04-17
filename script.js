@@ -24,9 +24,6 @@ const HOME_GUEST_GALLERY_MAX_ITEMS = 6;
 const GUEST_AUTHOR_STORAGE_KEY = 'weddingGuestAuthorName';
 const DEFAULT_GUEST_AUTHOR = 'Invitato';
 const SUPABASE_CDN_URL = 'assets/vendor/supabase-js.js';
-const MAPKIT_CDN_URL = 'https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js';
-const MAPLIBRE_JS_CDN_URL = 'assets/vendor/maplibre-gl.js';
-const MAPLIBRE_CSS_CDN_URL = 'assets/vendor/maplibre-gl.css';
 const DETAILS_AUTO_REFRESH_MS = 15 * 60 * 1000;
 const REDUCED_MOTION_QUERY = window.matchMedia('(prefers-reduced-motion: reduce)');
 const darkSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -48,21 +45,16 @@ const DEFAULT_WEDDING_EVENT_CONFIG = {
     endDate: '2026-09-29'
   }
 };
-let mapInstances = [];
-let usesAppleMap = false;
 let supabaseClient = null;
 let guestUploadsEnabled = false;
 let guestGalleryItems = [];
 let currentLightboxIndex = 0;
 let pendingGuestAuthorName = '';
 let cachedGuestAuthorName = '';
-let mapTargets = [];
 let revealObserver = null;
 let parallaxListenerAttached = false;
 let parallaxRafId = 0;
-let mapsInitialized = false;
 let galleryInitialized = false;
-let mapLibreCssInjected = false;
 let easterTapCount = 0;
 let easterTapTimer = 0;
 let easterDismissTimer = 0;
@@ -195,23 +187,6 @@ function loadExternalScript(src, attributes = {}) {
   return promise;
 }
 
-function ensureMapLibreCss() {
-  if (mapLibreCssInjected) return;
-  const existing = document.querySelector(`link[data-external-css="${MAPLIBRE_CSS_CDN_URL}"]`);
-  if (existing) {
-    mapLibreCssInjected = true;
-    return;
-  }
-
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = MAPLIBRE_CSS_CDN_URL;
-  link.setAttribute('crossorigin', '');
-  link.dataset.externalCss = MAPLIBRE_CSS_CDN_URL;
-  document.head.appendChild(link);
-  mapLibreCssInjected = true;
-}
-
 function initProgramCalendarCta() {
   if (!programCalendarCta) return;
 
@@ -219,11 +194,6 @@ function initProgramCalendarCta() {
   programCalendarCta.setAttribute('aria-label', 'Aggiungi al calendario');
   programCalendarCta.setAttribute('href', 'assets/calendar/matrimonioeleonoraeluca.ics');
   programCalendarCta.setAttribute('download', 'matrimonioeleonoraeluca.ics');
-}
-
-function showMapMessage(container, message) {
-  if (!container) return;
-  container.innerHTML = `<p class="map-fallback">${message}</p>`;
 }
 
 function setUploadStatus(message) {
@@ -519,16 +489,6 @@ function initHomepageEasterEgg() {
   });
 }
 
-function parseJwtPayload(token) {
-  try {
-    const payload = token.split('.')[1];
-    if (!payload) return null;
-    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-  } catch (_) {
-    return null;
-  }
-}
-
 function getPreferredMapsUrl(lat, lon, label) {
   const encodedLabel = encodeURIComponent(label);
   const ua = navigator.userAgent || '';
@@ -567,26 +527,6 @@ function initMapLinkClicks() {
       window.open(targetUrl, '_blank', 'noopener,noreferrer');
     });
   });
-}
-
-function getMapTargets() {
-  return Array.from(document.querySelectorAll('.js-inline-map'))
-    .map((container) => {
-      const { lat, lon, label, pinTitle } = container.dataset;
-      const parsedLat = Number.parseFloat(lat);
-      const parsedLon = Number.parseFloat(lon);
-      if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLon)) {
-        return null;
-      }
-      return {
-        container,
-        lat: parsedLat,
-        lon: parsedLon,
-        label: label || 'Destinazione',
-        pinTitle: pinTitle || label || 'Destinazione'
-      };
-    })
-    .filter(Boolean);
 }
 
 function normalizeIban(text) {
@@ -668,53 +608,6 @@ function initIbanCopy() {
       event.preventDefault();
       copyIban();
     }
-  });
-}
-
-function initMapLibreMap() {
-  if (!mapTargets.length) return;
-  if (typeof maplibregl === 'undefined') {
-    mapTargets.forEach((target) => {
-      showMapMessage(target.container, 'Mappa non disponibile al momento. Usa il pulsante "Apri su Mappe".');
-    });
-    return;
-  }
-
-  if (mapInstances.length) {
-    mapInstances.forEach((instance) => {
-      if (instance && typeof instance.remove === 'function') {
-        instance.remove();
-      }
-    });
-  }
-  mapInstances = [];
-  const styleUrl = darkSchemeQuery.matches
-    ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
-    : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
-
-  mapTargets.forEach((target) => {
-    target.container.innerHTML = '';
-    const map = new maplibregl.Map({
-      container: target.container,
-      style: styleUrl,
-      center: [target.lon, target.lat],
-      zoom: 15,
-      attributionControl: false
-    });
-    mapInstances.push(map);
-
-    map.scrollZoom.disable();
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-
-    const popup = new maplibregl.Popup({ offset: 20 }).setText(target.pinTitle);
-    const markerElement = document.createElement('div');
-    markerElement.className = 'program-map-marker';
-    markerElement.setAttribute('aria-hidden', 'true');
-
-    new maplibregl.Marker({ element: markerElement })
-      .setLngLat([target.lon, target.lat])
-      .setPopup(popup)
-      .addTo(map);
   });
 }
 
@@ -1337,105 +1230,14 @@ async function initGuestGallery() {
   loadGuestPhotos();
 }
 
-function initAppleMap() {
-  if (!mapTargets.length || typeof mapkit === 'undefined' || !window.MAPKIT_JWT) {
-    return false;
-  }
-
-  const payload = parseJwtPayload(window.MAPKIT_JWT);
-  if (!payload) {
-    return false;
-  }
-  if (payload.exp && Date.now() / 1000 > payload.exp) {
-    return false;
-  }
-
-  try {
-    mapkit.init({
-      authorizationCallback(done) {
-        done(window.MAPKIT_JWT);
-      }
-    });
-
-    mapTargets.forEach((target) => {
-      const center = new mapkit.Coordinate(target.lat, target.lon);
-      const map = new mapkit.Map(target.container.id, {
-        center,
-        isRotationEnabled: false,
-        isZoomEnabled: true,
-        showsCompass: mapkit.FeatureVisibility.Hidden,
-        showsMapTypeControl: false
-      });
-
-      map.region = new mapkit.CoordinateRegion(
-        center,
-        new mapkit.CoordinateSpan(0.01, 0.01)
-      );
-
-      map.addAnnotation(new mapkit.MarkerAnnotation(center, { title: target.pinTitle }));
-    });
-    return true;
-  } catch (error) {
-    console.warn('Apple Maps non disponibile, fallback MapLibre:', error);
-    return false;
-  }
-}
-
-async function initProgramMaps() {
-  if (mapsInitialized) return;
-  mapsInitialized = true;
-
-  if (window.MAPKIT_JWT) {
-    try {
-      await loadExternalScript(MAPKIT_CDN_URL, { crossorigin: 'anonymous' });
-    } catch (_) {
-      // Ignore and continue with MapLibre fallback.
-    }
-  }
-
-  if (!initAppleMap()) {
-    usesAppleMap = false;
-    ensureMapLibreCss();
-    if (typeof maplibregl === 'undefined') {
-      try {
-        await loadExternalScript(MAPLIBRE_JS_CDN_URL, { crossorigin: 'anonymous' });
-      } catch (_) {
-        initMapLibreMap();
-        return;
-      }
-    }
-    initMapLibreMap();
-  } else {
-    usesAppleMap = true;
-  }
-}
-
 function initDeferredSections() {
-  const detailsSection = document.getElementById('dettagli');
   const gallerySection = document.getElementById('foto-invitati');
   const canObserve = typeof IntersectionObserver !== 'undefined';
   const galleryVisible = getWeddingPhase() !== 'pre';
 
   if (!canObserve) {
-    initProgramMaps();
     if (galleryVisible) initGuestGallery();
     return;
-  }
-
-  if (detailsSection) {
-    const mapObserver = new IntersectionObserver(
-      (entries, observer) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          void initProgramMaps();
-          observer.disconnect();
-        });
-      },
-      { rootMargin: '380px 0px 220px 0px', threshold: 0.01 }
-    );
-    mapObserver.observe(detailsSection);
-  } else {
-    void initProgramMaps();
   }
 
   if (gallerySection && galleryVisible) {
@@ -1472,7 +1274,6 @@ window.addEventListener('DOMContentLoaded', () => {
   initIbanCopy();
   hydrateMapLinks();
   initMapLinkClicks();
-  mapTargets = getMapTargets();
   initDeferredSections();
   initDetailsAutoRefresh();
 });
@@ -1480,12 +1281,10 @@ window.addEventListener('DOMContentLoaded', () => {
 if (typeof darkSchemeQuery.addEventListener === 'function') {
   darkSchemeQuery.addEventListener('change', () => {
     setHeroPhotoForTheme();
-    if (mapsInitialized && !usesAppleMap) initMapLibreMap();
   });
 } else if (typeof darkSchemeQuery.addListener === 'function') {
   darkSchemeQuery.addListener(() => {
     setHeroPhotoForTheme();
-    if (mapsInitialized && !usesAppleMap) initMapLibreMap();
   });
 }
 

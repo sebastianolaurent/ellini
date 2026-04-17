@@ -1,27 +1,27 @@
 # Eleonora & Luca - Sito Matrimonio
 
-Landing page statica con invito, logistica evento, mappa, sezione regalo e galleria foto invitati con upload su Supabase Storage.
+Landing page statica con invito, logistica evento, mappe embed Apple, sezione regalo e galleria foto invitati con upload su Supabase Storage.
 
 ## Stack
 
 - HTML/CSS/JS vanilla (nessun framework)
 - [Supabase JS v2](https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2) per upload/lista foto
-- MapKit JS (Apple) con fallback MapLibre
+- Apple Maps Embed (iframe)
 
 ## Struttura Progetto
 
 - `index.html`: pagina principale invito
 - `gallery.html`: pagina con album completo
-- `script.js`: logica principale (mappa, calendario, IBAN, upload e preview galleria home)
+- `script.js`: logica principale (calendario, IBAN, upload e preview galleria home)
 - `gallery-page.js`: logica album completo + infinite scroll
-- `config.js`: configurazioni runtime (MapKit + Supabase)
+- `config.js`: configurazioni runtime (Supabase + date evento)
 - `styles.css`: stile globale
 - `assets/`: immagini e file calendario (`.ics`)
 - `CNAME`: dominio custom GitHub Pages
 
 ## Riferimenti Ambiente
 
-- Dominio pubblico: `https://lucaeleonora.com`
+- Dominio pubblico: `https://www.lucaeleonora.com`
 - Repository GitHub: `https://github.com/sebastianolaurent/ellini`
 - Branch principale: `main`
 
@@ -56,8 +56,6 @@ python3 -m http.server 8080
 
 Poi apri: `http://localhost:8080`
 
-Nota: in locale MapKit usa fallback (MapLibre), mentre il token MapKit è previsto per il dominio pubblico.
-
 ## Deploy
 
 Progetto pensato per GitHub Pages con dominio custom (`CNAME`).
@@ -71,5 +69,4 @@ Flusso tipico:
 ## Note Operative
 
 - Se cambia il bucket o il progetto Supabase, aggiorna `window.SUPABASE_CONFIG` in `config.js`.
-- Se scade o cambia autorizzazione mappe Apple, aggiorna `productionToken` in `config.js`.
 - `anonKey` non è una secret key server-side, ma le policy del bucket devono essere corrette (lettura/scrittura solo come previsto).

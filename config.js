@@ -1,15 +1,4 @@
 (() => {
-  const hostname = window.location.hostname;
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-
-  // Nessun token locale: in localhost usiamo fallback Leaflet.
-  const localhostToken = '';
-
-  // Token valido per il dominio pubblico autorizzato.
-  const productionToken = 'eyJraWQiOiJOSEJaSzRHM1A1IiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJEOFVSSjk3UEZQIiwiaWF0IjoxNzc2NDExNzI1LCJvcmlnaW4iOiJ3d3cubHVjYWVsZW9ub3JhLmNvbSIsInNjb3BlIjoibWFwa2l0X2pzIiwiZXhwIjoxNzkzNDg3NjAwfQ.kj8zg_x3Xy-jilOWtFNtoKDtoNHMcQyZ94mWMnDEEvpzFxXF7OlIuaKuA0MHP2CdSH6CIRrdjHng6DvLGBzV4Q';
-
-  window.MAPKIT_JWT = isLocalhost ? localhostToken : productionToken;
-
   window.SUPABASE_CONFIG = {
     url: 'https://edontmlcteelyjrqxnzf.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkb250bWxjdGVlbHlqcnF4bnpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTgzODEsImV4cCI6MjA5MTczNDM4MX0.yPcp_tj1CIyICpH4-Ik-HiAx7o6HByCNgPiEQ44MjRU',
