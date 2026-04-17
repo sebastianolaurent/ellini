@@ -162,8 +162,6 @@ p {
   font-size: 0.95rem;
   color: #fff;
   background: rgba(117, 82, 164, 0.68);
-  backdrop-filter: blur(8px) saturate(110%);
-  -webkit-backdrop-filter: blur(8px) saturate(110%);
   box-shadow: 0 3px 10px rgba(35, 27, 46, 0.14);
   transition:
     background-color 180ms ease,
@@ -237,8 +235,6 @@ p {
   background:
     linear-gradient(to top, rgba(28, 20, 41, 0.18), rgba(28, 20, 41, 0.18)),
     radial-gradient(circle at 75% 20%, rgba(230, 210, 255, 0.1), transparent 44%);
-  backdrop-filter: blur(9px) saturate(125%);
-  -webkit-backdrop-filter: blur(9px) saturate(125%);
   z-index: 1;
 }
 
@@ -253,36 +249,8 @@ p {
 }
 
 .hero-line {
-  opacity: 0;
-  transform: translate3d(0, 18px, 0);
-  transition:
-    opacity 700ms ease,
-    transform 700ms ease;
-}
-
-body.page-ready .hero-line {
   opacity: 1;
-  transform: translate3d(0, 0, 0);
-}
-
-body.page-ready .hero-line:nth-child(1) {
-  transition-delay: 90ms;
-}
-
-body.page-ready .hero-line:nth-child(2) {
-  transition-delay: 180ms;
-}
-
-body.page-ready .hero-line:nth-child(3) {
-  transition-delay: 260ms;
-}
-
-body.page-ready .hero-line:nth-child(4) {
-  transition-delay: 340ms;
-}
-
-body.page-ready .hero-line:nth-child(5) {
-  transition-delay: 430ms;
+  transform: none;
 }
 
 .hero-content h1 {
@@ -304,7 +272,6 @@ body.page-ready .hero-line:nth-child(5) {
   border: 1px solid rgba(238, 224, 255, 0.55);
   border-radius: 999px;
   padding: 0.35rem 0.75rem;
-  backdrop-filter: blur(2px);
 }
 
 .hero-content h1 span {
@@ -345,7 +312,6 @@ body.page-ready .hero-line:nth-child(5) {
   color: #fff8ff;
   font-size: 0.78rem;
   letter-spacing: 0.02em;
-  backdrop-filter: blur(3px);
 }
 
 .scroll-cue-only {

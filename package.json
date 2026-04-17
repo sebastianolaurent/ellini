@@ -1,0 +1,12 @@
+{
+  "name": "ellini",
+  "private": true,
+  "scripts": {
+    "build:css": "cleancss -O2 -o styles.min.css styles.css",
+    "watch:css": "chokidar \"styles.css\" -c \"npm run build:css\""
+  },
+  "devDependencies": {
+    "chokidar-cli": "^3.0.0",
+    "clean-css-cli": "^5.6.3"
+  }
+}

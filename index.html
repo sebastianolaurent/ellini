@@ -10,26 +10,35 @@
       name="description"
       content="Invito al matrimonio di Eleonora Ortenzi e Luca Porro: programma, logistica, mappa e informazioni regalo."
     />
+    <link
+      rel="preload"
+      as="image"
+      href="assets/images/hero-light.webp"
+      fetchpriority="high"
+    />
     <link rel="icon" href="/assets/images/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="stylesheet" href="assets/fonts/fonts.css" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.min.css" />
   </head>
   <body>
     <header class="hero" id="top">
       <div class="hero-overlay"></div>
-      <img
-        class="hero-photo"
-        src="assets/images/hero-light.webp"
-        alt="Eleonora e Luca"
-        loading="eager"
-        fetchpriority="high"
-        decoding="async"
-        width="1200"
-        height="672"
-      />
+      <picture>
+        <source srcset="assets/images/hero-dark.webp" media="(prefers-color-scheme: dark)" />
+        <img
+          class="hero-photo"
+          src="assets/images/hero-light.webp"
+          alt="Eleonora e Luca"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="1200"
+          height="672"
+        />
+      </picture>
       <div class="hero-content container">
         <p class="eyebrow hero-line">Siete invitati</p>
         <h1 class="hero-line">Eleonora Ortenzi <span>&</span> Luca Porro</h1>
@@ -91,10 +100,14 @@
               <div class="program-map-preview" aria-label="Mappa cerimonia">
                 <iframe
                   class="program-map-embed"
-                  src="https://embed.apple-mapkit.com/v1/embed?center=44.7669%2C9.3854&cameraDistance=475.6549&annotations=%5B%7B%22place%22%3A%22I8F2E9A3E2BA07BFE%22%7D%5D&language=it-IT&colorScheme=adaptive&token=eyJraWQiOiJOSEJaSzRHM1A1IiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJEOFVSSjk3UEZQIiwiaWF0IjoxNzc2NDExNzI1LCJvcmlnaW4iOiJ3d3cubHVjYWVsZW9ub3JhLmNvbSIsInNjb3BlIjoibWFwa2l0X2pzIiwiZXhwIjoxNzkzNDg3NjAwfQ.kj8zg_x3Xy-jilOWtFNtoKDtoNHMcQyZ94mWMnDEEvpzFxXF7OlIuaKuA0MHP2CdSH6CIRrdjHng6DvLGBzV4Q"
+                  data-src="https://embed.apple-mapkit.com/v1/embed?center=44.7669%2C9.3854&cameraDistance=475.6549&annotations=%5B%7B%22place%22%3A%22I8F2E9A3E2BA07BFE%22%7D%5D&language=it-IT&colorScheme=adaptive&token=eyJraWQiOiJOSEJaSzRHM1A1IiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJEOFVSSjk3UEZQIiwiaWF0IjoxNzc2NDExNzI1LCJvcmlnaW4iOiJ3d3cubHVjYWVsZW9ub3JhLmNvbSIsInNjb3BlIjoibWFwa2l0X2pzIiwiZXhwIjoxNzkzNDg3NjAwfQ.kj8zg_x3Xy-jilOWtFNtoKDtoNHMcQyZ94mWMnDEEvpzFxXF7OlIuaKuA0MHP2CdSH6CIRrdjHng6DvLGBzV4Q"
                   width="500"
                   height="300"
                   frameborder="0"
+                  loading="lazy"
+                  fetchpriority="low"
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  allowfullscreen
                   title="Mappa location cerimonia"
                 ></iframe>
               </div>
@@ -124,10 +137,14 @@
               <div class="program-map-preview" aria-label="Mappa ricevimento">
                 <iframe
                   class="program-map-embed"
-                  src="https://embed.apple-mapkit.com/v1/embed?center=44.7816%2C9.3866&cameraDistance=475.5354&annotations=%5B%7B%22place%22%3A%22I79B02C5D7F669F66%22%7D%5D&language=it-IT&colorScheme=adaptive&token=eyJraWQiOiJOSEJaSzRHM1A1IiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJEOFVSSjk3UEZQIiwiaWF0IjoxNzc2NDExNzI1LCJvcmlnaW4iOiJ3d3cubHVjYWVsZW9ub3JhLmNvbSIsInNjb3BlIjoibWFwa2l0X2pzIiwiZXhwIjoxNzkzNDg3NjAwfQ.kj8zg_x3Xy-jilOWtFNtoKDtoNHMcQyZ94mWMnDEEvpzFxXF7OlIuaKuA0MHP2CdSH6CIRrdjHng6DvLGBzV4Q"
+                  data-src="https://embed.apple-mapkit.com/v1/embed?center=44.7816%2C9.3866&cameraDistance=475.5354&annotations=%5B%7B%22place%22%3A%22I79B02C5D7F669F66%22%7D%5D&language=it-IT&colorScheme=adaptive&token=eyJraWQiOiJOSEJaSzRHM1A1IiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJEOFVSSjk3UEZQIiwiaWF0IjoxNzc2NDExNzI1LCJvcmlnaW4iOiJ3d3cubHVjYWVsZW9ub3JhLmNvbSIsInNjb3BlIjoibWFwa2l0X2pzIiwiZXhwIjoxNzkzNDg3NjAwfQ.kj8zg_x3Xy-jilOWtFNtoKDtoNHMcQyZ94mWMnDEEvpzFxXF7OlIuaKuA0MHP2CdSH6CIRrdjHng6DvLGBzV4Q"
                   width="500"
                   height="300"
                   frameborder="0"
+                  loading="lazy"
+                  fetchpriority="low"
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  allowfullscreen
                   title="Mappa location ricevimento"
                 ></iframe>
               </div>
@@ -276,8 +293,8 @@
       </div>
     </footer>
 
-    <script src="config.js?v=20260417-3"></script>
-    <script src="script.js?v=20260417-3"></script>
+    <script defer src="config.js"></script>
+    <script defer src="script.min.js"></script>
 
     <!--
              .-'-.

@@ -26,7 +26,6 @@ const DEFAULT_GUEST_AUTHOR = 'Invitato';
 const SUPABASE_CDN_URL = 'assets/vendor/supabase-js.js';
 const DETAILS_AUTO_REFRESH_MS = 15 * 60 * 1000;
 const REDUCED_MOTION_QUERY = window.matchMedia('(prefers-reduced-motion: reduce)');
-const darkSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
 const EASTER_SECRET_WORD = 'amore';
 const EASTER_TAP_TARGET = 5;
 const EASTER_TAP_RESET_MS = 1300;
@@ -201,13 +200,6 @@ function setUploadStatus(message) {
   guestUploadStatus.textContent = message;
 }
 
-function setHeroPhotoForTheme() {
-  if (!heroPhoto) return;
-  heroPhoto.src = darkSchemeQuery.matches
-    ? 'assets/images/hero-dark.webp'
-    : 'assets/images/hero-light.webp';
-}
-
 function applyHeroParallax() {
   if (!heroPhoto || isReducedMotionPreferred()) return;
   const scrollTop = window.scrollY || 0;
@@ -237,12 +229,6 @@ function detachParallaxListener() {
     cancelAnimationFrame(parallaxRafId);
     parallaxRafId = 0;
   }
-}
-
-function markHeroReady() {
-  requestAnimationFrame(() => {
-    document.body.classList.add('page-ready');
-  });
 }
 
 function revealWithObserver(nodeList) {
@@ -344,7 +330,6 @@ function applyTiltEffect(elements) {
 }
 
 function initInteractiveMotion() {
-  markHeroReady();
   initScrollReveals();
   applyTiltEffect(document.querySelectorAll('.info-card, .gift-box'));
   applyHeroParallax();
@@ -518,15 +503,42 @@ function hydrateMapLinks() {
 }
 
 function initMapLinkClicks() {
-  const mapLinks = document.querySelectorAll('.js-map-link');
-  mapLinks.forEach((link) => {
-    link.addEventListener('click', (event) => {
-      event.preventDefault();
-      const { lat, lon, label } = link.dataset;
-      const targetUrl = getPreferredMapsUrl(lat, lon, label || 'Destinazione');
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
-    });
-  });
+  // Keep native anchor behavior to avoid extra main-thread work and popup blockers.
+}
+
+function initLazyMapEmbeds() {
+  const mapEmbeds = Array.from(document.querySelectorAll('.program-map-embed[data-src]'));
+  if (!mapEmbeds.length) return;
+
+  const activateEmbed = (frame) => {
+    if (!(frame instanceof HTMLIFrameElement) || frame.dataset.loaded === 'true') return;
+    const src = frame.dataset.src;
+    if (!src) return;
+    frame.src = src;
+    frame.dataset.loaded = 'true';
+    delete frame.dataset.src;
+  };
+
+  if (typeof IntersectionObserver === 'undefined') {
+    mapEmbeds.forEach((frame) => activateEmbed(frame));
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        activateEmbed(entry.target);
+        observer.unobserve(entry.target);
+      });
+    },
+    {
+      rootMargin: '500px 0px 260px 0px',
+      threshold: 0.01
+    }
+  );
+
+  mapEmbeds.forEach((frame) => observer.observe(frame));
 }
 
 function normalizeIban(text) {
@@ -1266,7 +1278,6 @@ function initDetailsAutoRefresh() {
 
 window.addEventListener('DOMContentLoaded', () => {
   applyGalleryAvailabilityRules();
-  setHeroPhotoForTheme();
   initInteractiveMotion();
   initHomepageEasterEgg();
   initProgramCalendarCta();
@@ -1274,19 +1285,10 @@ window.addEventListener('DOMContentLoaded', () => {
   initIbanCopy();
   hydrateMapLinks();
   initMapLinkClicks();
+  initLazyMapEmbeds();
   initDeferredSections();
   initDetailsAutoRefresh();
 });
-
-if (typeof darkSchemeQuery.addEventListener === 'function') {
-  darkSchemeQuery.addEventListener('change', () => {
-    setHeroPhotoForTheme();
-  });
-} else if (typeof darkSchemeQuery.addListener === 'function') {
-  darkSchemeQuery.addListener(() => {
-    setHeroPhotoForTheme();
-  });
-}
 
 if (typeof REDUCED_MOTION_QUERY.addEventListener === 'function') {
   REDUCED_MOTION_QUERY.addEventListener('change', () => {

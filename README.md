@@ -56,6 +56,26 @@ python3 -m http.server 8080
 
 Poi apri: `http://localhost:8080`
 
+## Build CSS Minificato
+
+Installazione dipendenze tooling:
+
+```bash
+npm install
+```
+
+Build singolo:
+
+```bash
+npm run build:css
+```
+
+Watch automatico (rigenera `styles.min.css` quando modifichi `styles.css`):
+
+```bash
+npm run watch:css
+```
+
 ## Deploy
 
 Progetto pensato per GitHub Pages con dominio custom (`CNAME`).
