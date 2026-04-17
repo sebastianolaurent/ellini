@@ -6,7 +6,7 @@
   const localhostToken = '';
 
   // Token valido per il dominio pubblico autorizzato.
-  const productionToken = 'eyJraWQiOiJCUVU1VkxHV1ZYIiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJEOFVSSjk3UEZQIiwiaWF0IjoxNzc2MTYzMzY4LCJvcmlnaW4iOiJsdWNhZWxlb25vcmEuY29tIiwic2NvcGUiOiJtYXBraXRfanMifQ.NMZiB1QwZHLdRG1L4KLuURXwF9MOZnk87RgO7_K28K3pD2pgs89j70-pY7-C7v58YZvVtLUCb4J1UKsRQGWQlw';
+  const productionToken = 'eyJraWQiOiIzM1c1VFI5RlEzIiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJEOFVSSjk3UEZQIiwiaWF0IjoxNzc2NDEwNjgwLCJvcmlnaW4iOiIqLmx1Y2FlbGVvbm9yYS5jb20iLCJzY29wZSI6Im1hcGtpdF9qcyIsImV4cCI6MTc5MzQwMTIwMH0.AAE963PFokxPaiXf5HQCETcMYwmvCF4zGuchNBINjmoBwUOJzhpeTRhy83ZEeYQPM5N-5AfB2-sjse7hGd1GXA';
 
   window.MAPKIT_JWT = isLocalhost ? localhostToken : productionToken;
 
