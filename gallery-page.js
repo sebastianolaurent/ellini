@@ -13,12 +13,15 @@ const PAGE_SIZE = 80;
 const MAX_GUEST_PHOTO_BYTES = 1.5 * 1024 * 1024;
 const MAX_GUEST_PHOTO_DIMENSION = 2200;
 const MIN_GUEST_PHOTO_DIMENSION = 960;
+const GUEST_AUTHOR_STORAGE_KEY = 'weddingGuestAuthorName';
 let supabaseClient = null;
 let offset = 0;
 let hasMore = true;
 let isLoading = false;
 let items = [];
 let currentLightboxIndex = 0;
+let pendingGuestAuthorName = '';
+let cachedGuestAuthorName = '';
 
 function escapeHtml(text) {
   return String(text || '')
@@ -30,7 +33,7 @@ function escapeHtml(text) {
 }
 
 function formatAuthorFromSlug(slug) {
-  if (!slug) return 'Invitato';
+  if (!slug) return '';
   return slug
     .split('-')
     .filter(Boolean)
@@ -40,8 +43,12 @@ function formatAuthorFromSlug(slug) {
 
 function getAuthorFromPhotoName(fileName) {
   const match = String(fileName || '').match(/--([a-z0-9-]{2,32})--/i);
-  if (!match) return 'Invitato';
+  if (!match) return '';
   return formatAuthorFromSlug(match[1]);
+}
+
+function getGuestAuthorLabel(authorName) {
+  return normalizeGuestAuthorName(authorName);
 }
 
 function setStatus(message) {
@@ -57,16 +64,83 @@ function safeFileName(name) {
     .slice(0, 70) || 'foto';
 }
 
+function normalizeGuestAuthorName(name) {
+  return String(name || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 40);
+}
+
+function getGuestAuthorSlug(name) {
+  const normalized = normalizeGuestAuthorName(name)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  const slug = normalized
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 32);
+  return slug || 'invitato';
+}
+
+function getStoredGuestAuthorName() {
+  if (cachedGuestAuthorName) return cachedGuestAuthorName;
+  try {
+    cachedGuestAuthorName = normalizeGuestAuthorName(
+      localStorage.getItem(GUEST_AUTHOR_STORAGE_KEY) || ''
+    );
+    return cachedGuestAuthorName;
+  } catch (_) {
+    return cachedGuestAuthorName;
+  }
+}
+
+function storeGuestAuthorName(authorName) {
+  const normalized = normalizeGuestAuthorName(authorName);
+  cachedGuestAuthorName = normalized;
+  try {
+    localStorage.setItem(GUEST_AUTHOR_STORAGE_KEY, normalized);
+  } catch (_) {
+    // Ignore storage errors and continue with in-memory upload flow.
+  }
+}
+
+function askGuestAuthorName(initialValue = '') {
+  const answer = window.prompt(
+    'Come ti chiami? Inseriamo il tuo nome come autore delle foto.',
+    initialValue
+  );
+  if (answer === null) return null;
+  return normalizeGuestAuthorName(answer);
+}
+
+async function ensureGuestAuthorName() {
+  const storedAuthorName = getStoredGuestAuthorName();
+  if (storedAuthorName) return storedAuthorName;
+  const initialValue = pendingGuestAuthorName || '';
+  const authorName = await askGuestAuthorName(initialValue);
+  if (!authorName) return authorName;
+  storeGuestAuthorName(authorName);
+  return authorName;
+}
+
+function isGuestAuthorNameMissing(authorName) {
+  return !normalizeGuestAuthorName(authorName);
+}
+
 function getFileBaseName(name) {
   return safeFileName(name).replace(/\.[a-z0-9]+$/i, '') || 'foto';
 }
 
-function getGuestPhotoPath(file) {
+function getGuestPhotoPath(file, authorName) {
   const uniqueId =
     typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-  return `${Date.now()}-${uniqueId}-${getFileBaseName(file.name)}.jpg`;
+  const authorSlug = getGuestAuthorSlug(authorName);
+  return `${Date.now()}-${uniqueId}--${authorSlug}--${getFileBaseName(file.name)}.jpg`;
 }
 
 function blobToFile(blob, fileName) {
@@ -223,10 +297,14 @@ function renderGallery() {
   galleryGrid.innerHTML = items
     .map((image, index) => {
       const variant = getMosaicVariantClass(index);
+      const authorLabel = getGuestAuthorLabel(image.author);
+      const authorCaption = authorLabel
+        ? `<figcaption class="guest-photo-author">${escapeHtml(authorLabel)}</figcaption>`
+        : '';
       return `
       <figure class="guest-photo-card ${variant} is-loading" data-photo-index="${index}">
-        <img src="${image.url}" alt="Foto di ${escapeHtml(image.author)}" loading="lazy" />
-        <figcaption class="guest-photo-author">${escapeHtml(image.author)}</figcaption>
+        <img src="${image.url}" alt="${authorLabel ? `Foto di ${escapeHtml(authorLabel)}` : 'Foto invitati'}" loading="lazy" />
+        ${authorCaption}
       </figure>
     `;
     })
@@ -253,9 +331,10 @@ function renderGallery() {
 function openLightbox(index) {
   if (!photoLightbox || !lightboxImage || !items.length) return;
   const safeIndex = ((index % items.length) + items.length) % items.length;
+  const authorLabel = getGuestAuthorLabel(items[safeIndex].author);
   currentLightboxIndex = safeIndex;
   lightboxImage.src = items[safeIndex].url;
-  lightboxImage.alt = `Foto di ${items[safeIndex].author}`;
+  lightboxImage.alt = authorLabel ? `Foto di ${authorLabel}` : 'Foto invitati';
   photoLightbox.classList.add('is-open');
   photoLightbox.setAttribute('aria-hidden', 'false');
   document.body.classList.add('lightbox-open');
@@ -316,10 +395,15 @@ async function loadNextPage() {
   setStatus('');
 }
 
-async function uploadPhotos(files) {
+async function uploadPhotos(files, authorName) {
   if (!supabaseClient || !files.length) return;
   const { bucket } = window.SUPABASE_CONFIG || {};
   if (!bucket) return;
+  const normalizedAuthorName = normalizeGuestAuthorName(authorName);
+  if (!normalizedAuthorName) {
+    setStatus('Inserisci un nome prima di caricare le foto.');
+    return;
+  }
 
   if (galleryUploadTrigger) galleryUploadTrigger.disabled = true;
   let completed = 0;
@@ -333,7 +417,7 @@ async function uploadPhotos(files) {
       continue;
     }
 
-    const path = getGuestPhotoPath(optimizedFile);
+    const path = getGuestPhotoPath(optimizedFile, normalizedAuthorName);
     const { error } = await supabaseClient.storage.from(bucket).upload(path, optimizedFile, {
       upsert: false,
       cacheControl: '3600',
@@ -423,8 +507,18 @@ function initGalleryPage() {
   initLightboxEvents();
   initInfiniteScroll();
   if (galleryUploadTrigger && galleryUploadInput) {
-    galleryUploadTrigger.addEventListener('click', () => {
+    galleryUploadTrigger.addEventListener('click', async () => {
       if (galleryUploadTrigger.disabled) return;
+      const authorName = await ensureGuestAuthorName();
+      if (authorName === null) {
+        setStatus('Upload annullato.');
+        return;
+      }
+      if (isGuestAuthorNameMissing(authorName)) {
+        setStatus('Inserisci un nome prima di caricare le foto.');
+        return;
+      }
+      pendingGuestAuthorName = authorName;
       galleryUploadInput.click();
     });
 
@@ -436,8 +530,22 @@ function initGalleryPage() {
         setStatus('Seleziona almeno una foto valida.');
         return;
       }
-      await uploadPhotos(files);
+      const authorName = pendingGuestAuthorName || (await ensureGuestAuthorName());
+      if (authorName === null) {
+        setStatus('Upload annullato.');
+        galleryUploadInput.value = '';
+        pendingGuestAuthorName = '';
+        return;
+      }
+      if (isGuestAuthorNameMissing(authorName)) {
+        setStatus('Inserisci un nome prima di caricare le foto.');
+        galleryUploadInput.value = '';
+        pendingGuestAuthorName = '';
+        return;
+      }
+      await uploadPhotos(files, authorName);
       galleryUploadInput.value = '';
+      pendingGuestAuthorName = '';
     });
   }
 

@@ -22,7 +22,7 @@ const MAX_GUEST_PHOTO_DIMENSION = 2200;
 const MIN_GUEST_PHOTO_DIMENSION = 960;
 const HOME_GUEST_GALLERY_MAX_ITEMS = 6;
 const GUEST_AUTHOR_STORAGE_KEY = 'weddingGuestAuthorName';
-const DEFAULT_GUEST_AUTHOR = 'Invitato';
+const DEFAULT_GUEST_AUTHOR = '';
 const SUPABASE_CDN_URL = 'assets/vendor/supabase-js.js';
 const DETAILS_AUTO_REFRESH_MS = 15 * 60 * 1000;
 const REDUCED_MOTION_QUERY = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -676,6 +676,10 @@ function getAuthorFromPhotoName(fileName) {
   return formatAuthorFromSlug(match[1]);
 }
 
+function getGuestAuthorLabel(authorName) {
+  return normalizeGuestAuthorName(authorName);
+}
+
 function getFileBaseName(name) {
   return safeFileName(name).replace(/\.[a-z0-9]+$/i, '') || 'foto';
 }
@@ -779,7 +783,8 @@ function askGuestAuthorName(initialValue = '') {
 async function ensureGuestAuthorName() {
   const storedAuthorName = getStoredGuestAuthorName();
   if (storedAuthorName) return storedAuthorName;
-  const authorName = await askGuestAuthorName('');
+  const initialValue = pendingGuestAuthorName || '';
+  const authorName = await askGuestAuthorName(initialValue);
   if (!authorName) return authorName;
   storeGuestAuthorName(authorName);
   return authorName;
@@ -953,10 +958,11 @@ function openLightbox(index) {
   const safeIndex = ((index % guestGalleryItems.length) + guestGalleryItems.length) % guestGalleryItems.length;
   const image = guestGalleryItems[safeIndex];
   if (!image) return;
+  const authorLabel = getGuestAuthorLabel(image.author);
 
   currentLightboxIndex = safeIndex;
   lightboxImage.src = image.url;
-  lightboxImage.alt = `Foto di ${image.author}`;
+  lightboxImage.alt = authorLabel ? `Foto di ${authorLabel}` : 'Foto invitati';
   photoLightbox.classList.add('is-open');
   photoLightbox.setAttribute('aria-hidden', 'false');
   document.body.classList.add('lightbox-open');
@@ -1011,10 +1017,14 @@ function renderGuestGallery(images) {
   guestGallery.innerHTML = images
     .map((image, index) => {
       const variantClass = getMosaicVariantClass(index);
+      const authorLabel = getGuestAuthorLabel(image.author);
+      const authorCaption = authorLabel
+        ? `<figcaption class="guest-photo-author">${escapeHtml(authorLabel)}</figcaption>`
+        : '';
       return `
       <figure class="guest-photo-card ${variantClass} is-loading" data-photo-name="${image.name}" data-photo-index="${index}">
-        <img src="${image.url}" alt="Foto di ${escapeHtml(image.author)}" loading="lazy" />
-        <figcaption class="guest-photo-author">${escapeHtml(image.author)}</figcaption>
+        <img src="${image.url}" alt="${authorLabel ? `Foto di ${escapeHtml(authorLabel)}` : 'Foto invitati'}" loading="lazy" />
+        ${authorCaption}
       </figure>
     `;
     })
@@ -1082,6 +1092,11 @@ async function uploadGuestPhotos(files, authorName) {
   if (!supabaseClient || !files.length) return;
   const { bucket } = window.SUPABASE_CONFIG || {};
   if (!bucket) return;
+  const normalizedAuthorName = normalizeGuestAuthorName(authorName);
+  if (!normalizedAuthorName) {
+    setUploadStatus('Inserisci un nome prima di caricare le foto.');
+    return;
+  }
 
   setGuestUploaderState(false);
   setUploadStatus(`Caricamento di ${files.length} foto in corso...`);
@@ -1099,7 +1114,7 @@ async function uploadGuestPhotos(files, authorName) {
       continue;
     }
 
-    const path = getGuestPhotoPath(optimizedFile, authorName);
+    const path = getGuestPhotoPath(optimizedFile, normalizedAuthorName);
     const { error } = await supabaseClient.storage.from(bucket).upload(path, optimizedFile, {
       upsert: false,
       cacheControl: '3600',
