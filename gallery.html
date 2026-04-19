@@ -71,6 +71,32 @@
       </button>
     </div>
 
+    <div class="author-modal" id="author-modal" aria-hidden="true">
+      <div class="author-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="author-modal-title">
+        <button class="author-modal-close" id="author-modal-close" type="button" aria-label="Chiudi">×</button>
+        <p class="eyebrow">Prima di caricare</p>
+        <h3 id="author-modal-title">Come ti chiami?</h3>
+        <p class="author-modal-copy">Usiamo il tuo nome come autore delle foto.</p>
+        <form class="author-modal-form" id="author-modal-form">
+          <label class="author-modal-label" for="author-name-input">Nome</label>
+          <input
+            class="author-modal-input"
+            id="author-name-input"
+            name="authorName"
+            type="text"
+            maxlength="40"
+            autocomplete="name"
+            required
+          />
+          <p class="author-modal-error" id="author-modal-error" role="status" aria-live="polite"></p>
+          <div class="author-modal-actions">
+            <button class="btn btn-secondary" id="author-modal-cancel" type="button">Annulla</button>
+            <button class="btn btn-primary" type="submit">Continua</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script defer src="config.js"></script>
     <script defer src="assets/vendor/supabase-js.js"></script>
     <script defer src="gallery-page.min.js"></script>

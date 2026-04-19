@@ -8,6 +8,12 @@ const lightboxImage = document.getElementById('lightbox-image');
 const lightboxCloseButton = document.getElementById('lightbox-close');
 const lightboxPrevButton = document.getElementById('lightbox-prev');
 const lightboxNextButton = document.getElementById('lightbox-next');
+const authorModal = document.getElementById('author-modal');
+const authorModalForm = document.getElementById('author-modal-form');
+const authorModalInput = document.getElementById('author-name-input');
+const authorModalError = document.getElementById('author-modal-error');
+const authorModalCancel = document.getElementById('author-modal-cancel');
+const authorModalClose = document.getElementById('author-modal-close');
 
 const PAGE_SIZE = 80;
 const MAX_GUEST_PHOTO_BYTES = 1.5 * 1024 * 1024;
@@ -108,12 +114,68 @@ function storeGuestAuthorName(authorName) {
 }
 
 function askGuestAuthorName(initialValue = '') {
-  const answer = window.prompt(
-    'Come ti chiami? Inseriamo il tuo nome come autore delle foto.',
-    initialValue
-  );
-  if (answer === null) return null;
-  return normalizeGuestAuthorName(answer);
+  if (!authorModal || !authorModalForm || !authorModalInput || !authorModalError) {
+    const answer = window.prompt(
+      'Come ti chiami? Inseriamo il tuo nome come autore delle foto.',
+      initialValue
+    );
+    if (answer === null) return null;
+    return Promise.resolve(normalizeGuestAuthorName(answer));
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const closeModal = (value) => {
+      if (settled) return;
+      settled = true;
+      authorModal.classList.remove('is-open');
+      authorModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('author-modal-open');
+      authorModalForm.removeEventListener('submit', onSubmit);
+      authorModalCancel?.removeEventListener('click', onCancel);
+      authorModalClose?.removeEventListener('click', onCancel);
+      authorModal.removeEventListener('click', onBackdropClick);
+      document.removeEventListener('keydown', onEscape);
+      resolve(value);
+    };
+
+    const onSubmit = (event) => {
+      event.preventDefault();
+      const authorName = normalizeGuestAuthorName(authorModalInput.value);
+      if (!authorName) {
+        authorModalError.textContent = 'Inserisci il tuo nome per continuare.';
+        authorModalInput.focus();
+        return;
+      }
+      closeModal(authorName);
+    };
+
+    const onCancel = () => closeModal(null);
+
+    const onBackdropClick = (event) => {
+      if (event.target === authorModal) onCancel();
+    };
+
+    const onEscape = (event) => {
+      if (event.key === 'Escape') onCancel();
+    };
+
+    authorModalInput.value = initialValue;
+    authorModalError.textContent = '';
+    authorModal.classList.add('is-open');
+    authorModal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('author-modal-open');
+    authorModalForm.addEventListener('submit', onSubmit);
+    authorModalCancel?.addEventListener('click', onCancel);
+    authorModalClose?.addEventListener('click', onCancel);
+    authorModal.addEventListener('click', onBackdropClick);
+    document.addEventListener('keydown', onEscape);
+    requestAnimationFrame(() => {
+      authorModalInput.focus();
+      authorModalInput.select();
+    });
+  });
 }
 
 async function ensureGuestAuthorName() {
