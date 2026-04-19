@@ -314,6 +314,16 @@ p {
   letter-spacing: 0.02em;
 }
 
+.hero-badge-deadline {
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border: 1px solid rgba(182, 146, 228, 0.46);
+  background: linear-gradient(140deg, rgba(247, 241, 255, 0.92), rgba(233, 220, 252, 0.9));
+  color: #3d2856;
+  box-shadow: 0 6px 16px rgba(89, 59, 127, 0.16);
+}
+
 .scroll-cue-only {
   display: inline-flex;
   align-items: center;
@@ -446,6 +456,62 @@ p {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
+}
+
+.rsvp-deadline {
+  display: inline-block;
+  margin-top: 0;
+  margin-bottom: 0.7rem;
+  padding: 0.4rem 0.82rem;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #3d2856;
+  border: 1px solid rgba(182, 146, 228, 0.46);
+  background: linear-gradient(140deg, rgba(247, 241, 255, 0.92), rgba(233, 220, 252, 0.9));
+  box-shadow: 0 6px 16px rgba(89, 59, 127, 0.16);
+}
+
+.confirm-chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.confirm-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  padding: 0.62rem 0.78rem;
+  border-radius: 14px;
+  border: 1px solid rgba(182, 146, 228, 0.42);
+  background: linear-gradient(155deg, rgba(248, 242, 255, 0.95), rgba(236, 225, 252, 0.9));
+  color: #2f1f46;
+  text-decoration: none;
+  box-shadow: 0 8px 18px rgba(69, 43, 102, 0.12);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.confirm-chip:hover,
+.confirm-chip:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(145, 107, 201, 0.55);
+  box-shadow: 0 10px 22px rgba(69, 43, 102, 0.18);
+}
+
+.confirm-chip-label {
+  font-size: 0.74rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #6b4a95;
+}
+
+.confirm-chip-number {
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .program-map-preview {
@@ -1321,6 +1387,37 @@ body.author-modal-open {
     background: rgba(10, 8, 16, 0.56);
     border-color: rgba(214, 192, 245, 0.56);
   }
+
+  .hero-badge-deadline {
+    color: #f1e5ff;
+    border-color: rgba(198, 166, 244, 0.4);
+    background: linear-gradient(140deg, rgba(66, 51, 91, 0.94), rgba(48, 37, 68, 0.92));
+    box-shadow: 0 8px 18px rgba(8, 5, 14, 0.34);
+  }
+
+  .rsvp-deadline {
+    color: #f1e5ff;
+    border-color: rgba(198, 166, 244, 0.4);
+    background: linear-gradient(140deg, rgba(66, 51, 91, 0.94), rgba(48, 37, 68, 0.92));
+    box-shadow: 0 8px 18px rgba(8, 5, 14, 0.34);
+  }
+
+  .confirm-chip {
+    border-color: rgba(198, 166, 244, 0.34);
+    background: linear-gradient(155deg, rgba(60, 46, 83, 0.94), rgba(45, 35, 63, 0.92));
+    color: #f2e8ff;
+    box-shadow: 0 10px 20px rgba(6, 3, 12, 0.34);
+  }
+
+  .confirm-chip:hover,
+  .confirm-chip:focus-visible {
+    border-color: rgba(198, 166, 244, 0.52);
+    box-shadow: 0 12px 24px rgba(6, 3, 12, 0.42);
+  }
+
+  .confirm-chip-label {
+    color: rgba(215, 193, 246, 0.95);
+  }
 }
 
 @media (max-width: 980px) {
@@ -1414,6 +1511,29 @@ body.author-modal-open {
   .hero-badge {
     font-size: 0.72rem;
     padding: 0.3rem 0.6rem;
+  }
+
+  .hero-badge-deadline {
+    font-size: 0.8rem;
+    padding: 0.34rem 0.72rem;
+  }
+
+  .rsvp-deadline {
+    font-size: 0.84rem;
+    padding: 0.32rem 0.6rem;
+  }
+
+  .confirm-chips {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .confirm-chip {
+    padding: 0.56rem 0.7rem;
+  }
+
+  .confirm-chip-number {
+    font-size: 0.9rem;
   }
 
   .checklist-grid {
