@@ -601,7 +601,10 @@ function initLazyMapEmbeds() {
 }
 
 function normalizeIban(text) {
-  return (text || '').replace(/\s+/g, '').trim();
+  return String(text || '')
+    .normalize('NFKC')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
 }
 
 function getIbanParts(iban) {
@@ -632,14 +635,16 @@ function formatIbanForDisplay(iban) {
 
 function initIbanDisplay() {
   if (!ibanText) return;
-  const rawIban = normalizeIban(ibanText.textContent);
+  const rawIban = normalizeIban(ibanText.dataset.ibanValue || ibanText.textContent);
   ibanText.dataset.ibanRaw = rawIban;
   ibanText.innerHTML = formatIbanForDisplay(rawIban);
 }
 
 function getIbanValue() {
   if (!ibanText) return '';
-  return ibanText.dataset.ibanRaw || normalizeIban(ibanText.textContent);
+  return normalizeIban(
+    ibanText.dataset.ibanValue || ibanText.dataset.ibanRaw || ibanText.textContent
+  );
 }
 
 function setCopyFeedback(message) {
@@ -649,12 +654,31 @@ function setCopyFeedback(message) {
 
 async function copyToClipboard(text) {
   if (!text) return false;
-  if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
-    return false;
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (_) {
+      // Use the legacy fallback when clipboard permissions are unavailable.
+    }
   }
 
-  await navigator.clipboard.writeText(text);
-  return true;
+  const copyField = document.createElement('textarea');
+  copyField.value = text;
+  copyField.setAttribute('readonly', '');
+  copyField.setAttribute('aria-hidden', 'true');
+  copyField.style.position = 'fixed';
+  copyField.style.opacity = '0';
+  copyField.style.pointerEvents = 'none';
+  document.body.appendChild(copyField);
+  copyField.select();
+  copyField.setSelectionRange(0, copyField.value.length);
+
+  try {
+    return document.execCommand('copy');
+  } finally {
+    copyField.remove();
+  }
 }
 
 function initIbanCopy() {
@@ -669,7 +693,7 @@ function initIbanCopy() {
       }
       setCopyFeedback('IBAN copiato negli appunti.');
     } catch (error) {
-      setCopyFeedback("Copia non riuscita. Seleziona e copia manualmente l'IBAN.");
+      setCopyFeedback('Copia non riuscita. Riprova con un altro browser.');
     }
   };
 
@@ -680,6 +704,8 @@ function initIbanCopy() {
       copyIban();
     }
   });
+  ibanText.addEventListener('copy', (event) => event.preventDefault());
+  ibanText.addEventListener('dragstart', (event) => event.preventDefault());
 }
 
 function safeFileName(name) {

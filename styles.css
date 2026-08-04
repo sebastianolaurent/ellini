@@ -1053,6 +1053,9 @@ body.author-modal-open {
 
 .iban-copy {
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .iban-sep {
