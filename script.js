@@ -423,6 +423,20 @@ function createHomepageEasterConfetti(layer) {
   }
 }
 
+function launchIbanConfetti() {
+  if (isReducedMotionPreferred()) return;
+  const existingLayer = document.getElementById('iban-confetti');
+  if (existingLayer) existingLayer.remove();
+
+  const confettiLayer = document.createElement('div');
+  confettiLayer.id = 'iban-confetti';
+  confettiLayer.className = 'easter-confetti-layer';
+  confettiLayer.setAttribute('aria-hidden', 'true');
+  createHomepageEasterConfetti(confettiLayer);
+  document.body.appendChild(confettiLayer);
+  window.setTimeout(() => confettiLayer.remove(), 5000);
+}
+
 function launchHomepageEasterEgg() {
   dismissHomepageEasterEgg();
   document.body.classList.add('easter-egg-active');
@@ -692,6 +706,7 @@ function initIbanCopy() {
         throw new Error('Clipboard API non disponibile');
       }
       setCopyFeedback('IBAN copiato negli appunti.');
+      launchIbanConfetti();
     } catch (error) {
       setCopyFeedback('Copia non riuscita. Riprova con un altro browser.');
     }
